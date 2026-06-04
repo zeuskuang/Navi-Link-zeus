@@ -40,6 +40,15 @@ public class AmapNaviReceiver extends BroadcastReceiver {
             return;
         }
 
+        if (keyType == 13011) {
+            // TMC 路况数据
+            String tmcSegment = intent.getStringExtra("EXTRA_TMC_SEGMENT");
+            if (tmcSegment != null) {
+                manager.updateTmcData(tmcSegment);
+            }
+            return;
+        }
+
         if (keyType == 10001) {
             // 导航或巡航信息
             manager.resetWatchdog();

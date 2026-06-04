@@ -109,14 +109,10 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <ProgressBar
-                android:id="@+id/pb_route"
-                style="?android:attr/progressBarStyleHorizontal"
+            <com.navi.link.TmcProgressBar
+                android:id="@+id/tmc_progress_bar"
                 android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:progress="10"
-                android:progressBackgroundTint="#333333"
-                android:progressTint="#00FA9A" />
+                android:layout_height="wrap_content" />
 
             <!-- 底部信息栏 -->
             <androidx.constraintlayout.widget.ConstraintLayout

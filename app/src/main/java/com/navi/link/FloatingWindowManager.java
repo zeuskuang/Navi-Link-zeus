@@ -63,7 +63,8 @@ public class FloatingWindowManager {
     private TextView tvDistanceUnit;
     private TextView tvAction;
     private TextView tvRoadName;
-    private ProgressBar pbRoute;
+    private TmcProgressBar tmcProgressBar;
+    private TmcProgressBar tmcProgressBarFull;
     private TextView tvSummary;
     private TextView tvEta;
     private View llTrafficLightGroup;
@@ -156,6 +157,7 @@ public class FloatingWindowManager {
     private int cachedRemainLightNum = 0;
     private String cachedCurRoadName = "";
     private int cachedCarDirection = 0;
+    private String cachedTmcJson = null;
 
     // Runnable
     private final Runnable naviSwitchRunnable = this::doNaviSwitch;
@@ -484,7 +486,8 @@ public class FloatingWindowManager {
         tvDistanceUnit = null;
         tvAction = null;
         tvRoadName = null;
-        pbRoute = null;
+        tmcProgressBar = null;
+        tmcProgressBarFull = null;
         tvSummary = null;
         tvEta = null;
         llTrafficLightGroup = null;
@@ -537,7 +540,7 @@ public class FloatingWindowManager {
         tvDistanceUnit = floatingView.findViewById(R.id.tv_distance_unit);
         tvAction = floatingView.findViewById(R.id.tv_action);
         tvRoadName = floatingView.findViewById(R.id.tv_road_name);
-        pbRoute = floatingView.findViewById(R.id.pb_route);
+        tmcProgressBar = floatingView.findViewById(R.id.tmc_progress_bar);
         tvSummary = floatingView.findViewById(R.id.tv_summary);
         tvEta = floatingView.findViewById(R.id.tv_eta);
         layoutInfoBar = floatingView.findViewById(R.id.layout_info_bar);
@@ -594,6 +597,7 @@ public class FloatingWindowManager {
         tvFullLabelCurrent = floatingView.findViewById(R.id.tv_full_label_current);
         tvFullLabelEnd = floatingView.findViewById(R.id.tv_full_label_end);
         tvFullDirection = floatingView.findViewById(R.id.tv_full_direction);
+        tmcProgressBarFull = floatingView.findViewById(R.id.tmc_progress_bar_full);
     }
 
     /**
@@ -630,6 +634,8 @@ public class FloatingWindowManager {
                     tvFullLightCount.setText(cachedRemainLightNum + "个");
                 if (tvFullDirection != null && cachedCarDirection > 0)
                     tvFullDirection.setText("朝向 " + getDirectionText(cachedCarDirection));
+                if (tmcProgressBarFull != null && cachedTmcJson != null)
+                    tmcProgressBarFull.updateTmcData(cachedTmcJson);
             } else if (styleMode == 1) {
                 if (cachedIcon >= 0) {
                     int res = getTurnIconRes(cachedIcon);
@@ -650,7 +656,7 @@ public class FloatingWindowManager {
                     tvDistanceUnit.setText(disNumIsNow(cachedDisNum) ? "" : cachedDisUnit);
                 if (tvAction != null) tvAction.setText(cachedActionStr);
                 if (tvRoadName != null && !cachedRoadName.isEmpty()) tvRoadName.setText(cachedRoadName);
-                if (pbRoute != null) pbRoute.setProgress(cachedProgress);
+                if (tmcProgressBar != null && cachedTmcJson != null) tmcProgressBar.updateTmcData(cachedTmcJson);
                 if (tvSummary != null) tvSummary.setText(cachedSummaryStr);
                 if (tvEta != null) tvEta.setText(cachedEta);
             }
@@ -774,6 +780,38 @@ public class FloatingWindowManager {
         }
     }
 
+    /** 更新 TMC 路况数据（KEY_TYPE=13011） */
+    public void updateTmcData(String tmcJson) {
+        if (tmcJson == null || tmcJson.isEmpty()) return;
+        cachedTmcJson = tmcJson;
+        if (isShowing && floatingView != null && currentMode == MODE_NAVI) {
+            if (styleMode == 0 && tmcProgressBar != null) {
+                tmcProgressBar.updateTmcData(tmcJson);
+            } else if (styleMode == 2 && tmcProgressBarFull != null) {
+                tmcProgressBarFull.updateTmcData(tmcJson);
+            }
+        }
+    }
+
+    /** ETA 文字精简："预计明天09:14到达" → "明09:14到" */
+    private String formatEta(String eta) {
+        if (eta == null || eta.isEmpty()) return "";
+        String result = eta;
+        // 去掉"预计"
+        if (result.startsWith("预计")) {
+            result = result.substring(2);
+        }
+        // "到达" 改为 "到"
+        if (result.endsWith("到达")) {
+            result = result.substring(0, result.length() - 2) + "到";
+        }
+        // 缩短日期前缀
+        result = result.replace("明天", "明");
+        result = result.replace("后天", "后");
+        result = result.replace("大后天", "大后");
+        return result;
+    }
+
     // ======================== 主题颜色 ========================
 
     public void applyThemeColor(int color) {
@@ -799,7 +837,7 @@ public class FloatingWindowManager {
         if (tvFullLabelCurrent != null) tvFullLabelCurrent.setTextColor(accentColor);
         if (tvFullLabelEnd != null) tvFullLabelEnd.setTextColor(accentColor);
         if (tvFullDirection != null) tvFullDirection.setTextColor(accentColor);
-        if (pbRoute != null) pbRoute.setProgressTintList(ColorStateList.valueOf(accentColor));
+
 
         if (layoutInfoBar != null) {
             int bgColor;
@@ -1040,9 +1078,9 @@ public class FloatingWindowManager {
         if (tvDistanceUnit != null) tvDistanceUnit.setText(disNumIsNow(disNum)?"" : disUnit);
         if (tvAction != null) tvAction.setText(actionStr);
         if (tvRoadName != null) tvRoadName.setText(roadName);
-        if (pbRoute != null) pbRoute.setProgress(progress);
+        // progress bar now handled by TmcProgressBar via TMC data
         if (tvSummary != null) tvSummary.setText(summaryStr);
-        if (tvEta != null) tvEta.setText(eta);
+        if (tvEta != null) tvEta.setText(formatEta(eta));
     }
 
     private boolean disNumIsNow(String disNum){

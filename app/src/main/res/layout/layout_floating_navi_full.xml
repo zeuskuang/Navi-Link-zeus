@@ -254,6 +254,11 @@
                  android:text="-"
                  android:textSize="16sp"/>
          </LinearLayout>
+
+         <com.navi.link.TmcProgressBar
+             android:id="@+id/tmc_progress_bar_full"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content" />
         </LinearLayout>
 </FrameLayout>
 </FrameLayout>
