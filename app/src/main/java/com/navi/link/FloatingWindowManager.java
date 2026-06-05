@@ -117,6 +117,7 @@ public class FloatingWindowManager {
     private int themeColor = 0xFF4FC3F7;
     private boolean isShowing = false;
     private boolean hasActiveData = false; // 是否收到过实际导航/巡航广播数据
+    private boolean cruiseEnabled = true; // 是否启用巡航窗
     private boolean isOverspeedBlinking = false; // 超速闪烁状态
 
     // 昼夜模式 + 透明背景
@@ -227,6 +228,7 @@ public class FloatingWindowManager {
         savedPosY = sp.getInt("window_pos_y", -1);
         isNightMode = sp.getBoolean("is_night_mode", true); // 默认夜间
         backgroundMode = sp.getInt("background_mode", 0); // 默认深色背景
+        cruiseEnabled = sp.getBoolean("cruise_enabled", true); // 默认启用巡航
     }
 
     /** 当前模式对应的缩放索引: 常规=0, 灵动岛/巡航=1, 全数据=2 */
@@ -252,6 +254,10 @@ public class FloatingWindowManager {
 
     public void show() {
         currentMode = MODE_CRUISE;
+        if (!cruiseEnabled) {
+            // 巡航未启用，不显示窗口
+            return;
+        }
         recreateWindow();
     }
 
@@ -301,11 +307,20 @@ public class FloatingWindowManager {
         handler.removeCallbacks(naviSwitchRunnable);
         handler.removeCallbacks(trafficLightTimeoutRunnable);
         handler.removeCallbacks(cruiseGraceRunnable);
+        if (!cruiseEnabled) {
+            // 巡航未启用，隐藏窗口
+            if (floatingView != null) floatingView.setVisibility(View.GONE);
+            return;
+        }
         shouldHideAfterRecreate = false;
         if (currentMode != MODE_CRUISE) {
             currentMode = MODE_CRUISE;
             recreateWindow();
         }
+    }
+
+    public void setCruiseEnabled(boolean enabled) {
+        this.cruiseEnabled = enabled;
     }
 
     public void switchToNaviMode() {
@@ -463,6 +478,11 @@ public class FloatingWindowManager {
 
     private void onNaviTimeout() {
         if (currentMode == MODE_NAVI) {
+            if (!cruiseEnabled) {
+                // 巡航未启用，隐藏窗口
+                if (floatingView != null) floatingView.setVisibility(View.GONE);
+                return;
+            }
             currentMode = MODE_CRUISE;
             View view = floatingView;
             shouldHideAfterRecreate = (view == null || view.getVisibility() == View.VISIBLE) ? false : true;
@@ -472,6 +492,10 @@ public class FloatingWindowManager {
 
     private void onCruiseGrace() {
         if (currentMode == MODE_NAVI) {
+            if (!cruiseEnabled) {
+                if (floatingView != null) floatingView.setVisibility(View.GONE);
+                return;
+            }
             currentMode = MODE_CRUISE;
             View view = floatingView;
             shouldHideAfterRecreate = (view == null || view.getVisibility() == View.VISIBLE) ? false : true;
@@ -852,16 +876,24 @@ public class FloatingWindowManager {
 
         boolean isDark = isDarkThemeColor(themeColor);
         int accentColor = isDark ? Color.WHITE : themeColor;
+        // 黑色主题时全数据卡片用蓝色，浅色主题用主题色
+        int fullCardAccent = isDark ? 0xFF0099FF : themeColor;
+        // 透明模式下强调色元素跟随昼夜文字色
+        int labelColor = accentColor;
+        if (backgroundMode == 2) {
+            labelColor = isNightMode ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT;
+        }
 
-        if (tvCruiseSpeed != null) tvCruiseSpeed.setTextColor(accentColor);
-        if (tvMinSpeed != null) tvMinSpeed.setTextColor(accentColor);
-        if (tvFullSpeed != null) tvFullSpeed.setTextColor(accentColor);
-        if (tvFullLabelCurrent != null) tvFullLabelCurrent.setTextColor(accentColor);
-        if (tvFullLabelEnd != null) tvFullLabelEnd.setTextColor(accentColor);
-        if (tvFullDirection != null) tvFullDirection.setTextColor(accentColor);
+        if (tvCruiseSpeed != null) tvCruiseSpeed.setTextColor(fullCardAccent);
+        if (tvMinSpeed != null) tvMinSpeed.setTextColor(fullCardAccent);
+        if (tvFullSpeed != null) tvFullSpeed.setTextColor(fullCardAccent);
+        if (tvFullSpeedUnit != null) tvFullSpeedUnit.setTextColor(fullCardAccent);
+        if (tvFullLabelCurrent != null) tvFullLabelCurrent.setTextColor(labelColor);
+        if (tvFullLabelEnd != null) tvFullLabelEnd.setTextColor(labelColor);
+        if (tvFullDirection != null) tvFullDirection.setTextColor(fullCardAccent);
 
-        // 全数据卡片中间区域跟随主题色
-        if (cvFullMiddle != null) cvFullMiddle.setCardBackgroundColor(themeColor);
+        // 全数据卡片中间区域
+        if (cvFullMiddle != null) cvFullMiddle.setCardBackgroundColor(fullCardAccent);
 
         if (layoutInfoBar != null) {
             int cornerPx = Math.round(dpToPx(12) * getScale());
@@ -880,15 +912,15 @@ public class FloatingWindowManager {
                 // 深色 - 原有逻辑
                 int bgColor;
                 if (isDark) {
-                    bgColor = 0xFF2A2A2A;
+                    bgColor = 0xFF242424;
                 } else {
                     int r = (themeColor >> 16) & 0xFF;
                     int g = (themeColor >> 8) & 0xFF;
                     int b = themeColor & 0xFF;
                     bgColor = 0xFF000000
-                            | ((int) (r * 0.15f) << 16)
-                            | ((int) (g * 0.15f) << 8)
-                            | (int) (b * 0.15f);
+                            | ((int) (r * 0.20f) << 16)
+                            | ((int) (g * 0.20f) << 8)
+                            | (int) (b * 0.20f);
                 }
                 GradientDrawable bgDrawable = new GradientDrawable();
                 bgDrawable.setShape(GradientDrawable.RECTANGLE);
@@ -924,7 +956,7 @@ public class FloatingWindowManager {
             bgDrawable.setShape(GradientDrawable.RECTANGLE);
             int bgColor;
             if (isDarkThemeColor(themeColor)) {
-                bgColor = 0xFF1E1E1E;
+                bgColor = 0xFF121212;
             } else {
                 int r = (themeColor >> 16) & 0xFF;
                 int g = (themeColor >> 8) & 0xFF;
@@ -1319,9 +1351,9 @@ public class FloatingWindowManager {
                     tvFullSpeed.clearAnimation();
                     isOverspeedBlinking = false;
                 }
-                // 恢复正常主题色
-                int accentColor = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
-                tvFullSpeed.setTextColor(accentColor);
+                // 恢复正常主题色（黑色主题用蓝色）
+                int fullCardAccent = isDarkThemeColor(themeColor) ? 0xFF0099FF : themeColor;
+                tvFullSpeed.setTextColor(fullCardAccent);
             }
         }
         if (tvFullSpeedLimit != null) {

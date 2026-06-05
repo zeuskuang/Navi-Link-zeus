@@ -164,15 +164,29 @@
 
         </LinearLayout>
 
+        <CheckBox
+            android:id="@+id/cb_cruise_enabled"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:buttonTint="#FF0099FF"
+            android:checked="true"
+            android:text="启用巡航窗"
+            android:textColor="#FFCCCCCC"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ll_startup_container" />
+
         <LinearLayout
             android:id="@+id/ll_style_container"
             android:orientation="vertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_startup_container">
+            app:layout_constraintTop_toBottomOf="@id/cb_cruise_enabled">
 
             <TextView
                 android:textSize="13sp"
