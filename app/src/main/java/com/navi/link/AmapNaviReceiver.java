@@ -10,7 +10,7 @@ import org.json.JSONArray;
 public class AmapNaviReceiver extends BroadcastReceiver {
 
     private static final String TAG = "AmapNavi";
-    private boolean isLog = true;
+    private boolean isLog = false;
     @Override
     public void onReceive(Context context, Intent intent) {
         if (!"AUTONAVI_STANDARD_BROADCAST_SEND".equals(intent.getAction())) return;
@@ -74,13 +74,11 @@ public class AmapNaviReceiver extends BroadcastReceiver {
                 handleNaviInfo(intent, manager);
             } else {
                 if (manager.getCurrentMode() == FloatingWindowManager.MODE_NAVI) {
-                    // 导航模式但无新icon，始终启动巡航宽限期
-                    manager.startCruiseGrace();
-                    handleNaviInfo(intent, manager);
-                } else {
-                    // 巡航模式
-                    handleCruiseInfo(intent, manager);
+                    // 导航模式但无新icon，立即切换到巡航模式
+                    manager.switchToCruiseMode();
                 }
+                // 巡航模式
+                handleCruiseInfo(intent, manager);
             }
         }
     }
@@ -93,7 +91,6 @@ public class AmapNaviReceiver extends BroadcastReceiver {
             manager.updateTrafficLight(status, dir, countdown);
             return;
         }
-
         // 巡航模式红绿灯数据
         String lightsData = intent.getStringExtra("lightsData");
         if (lightsData != null) {

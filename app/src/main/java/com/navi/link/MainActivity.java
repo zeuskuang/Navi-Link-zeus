@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,7 +12,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
-import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.ScrollView;
@@ -74,21 +72,13 @@ public class MainActivity extends AppCompatActivity {
     private View[] themeChips;
     private TextView tvScaleValue;
     private TextView tvStatus;
-    private TextView tvSkinDebug; // 测试: 车机昼夜设置
-    private ContentObserver skinObserver;
-    private CompoundButton cbCruiseEnabled;
-    private TextView tvCruiseStatus;
-    private MaterialCardView cardCruiseToggle;
 
     private boolean isMinimalStyle = false;
     private int styleMode = 0;
     private boolean isServiceOnlyMode = false;
     private int backgroundMode = 0; // 0=深色, 1=半透明, 2=全透明
-    private boolean cruiseEnabled = true;
 
     private int themeColor = 0xFF4FC3F7;
-
-    private boolean isGetSkinDebug = false;
 
     private boolean isDarkColor(int color) {
         return ((color >> 16) & 0xFF) * 0.299
@@ -132,18 +122,7 @@ public class MainActivity extends AppCompatActivity {
         sbScale = findViewById(R.id.sb_scale);
         tvScaleValue = findViewById(R.id.tv_scale_value);
         tvStatus = findViewById(R.id.tv_status);
-        cbCruiseEnabled = findViewById(R.id.cb_cruise_enabled);
-        tvCruiseStatus = findViewById(R.id.tv_cruise_status);
-        cardCruiseToggle = findViewById(R.id.card_cruise_toggle);
         llThemeColors = findViewById(R.id.ll_theme_colors);
-
-        // 测试: 车机昼夜设置
-        tvSkinDebug = findViewById(R.id.tv_skin_debug);
-        if (isGetSkinDebug) {
-            setupSkinObserver();
-        } else {
-            tvSkinDebug.setVisibility(View.GONE);
-        }
 
         View contentView = findViewById(android.R.id.content);
         if (contentView instanceof ScrollView) {
@@ -155,35 +134,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** 测试: 监听车机昼夜设置 */
-    private void setupSkinObserver() {
-        updateSkinDebug();
-        skinObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
-            @Override
-            public void onChange(boolean selfChange) {
-                super.onChange(selfChange);
-                updateSkinDebug();
-            }
-        };
-        try {
-            getContentResolver().registerContentObserver(
-                Settings.System.getUriFor("SETTING_SPD_CUSTOM_SKIN"),
-                false, skinObserver);
-        } catch (Exception e) {
-            tvSkinDebug.setText("SKIN: 监听失败 - " + e.getMessage());
-        }
-    }
-
-    private void updateSkinDebug() {
-        try {
-            int skinId = Settings.System.getInt(getContentResolver(), "SETTING_SPD_CUSTOM_SKIN", -1);
-            String desc = skinId == 0 ? "日间" : skinId == 1 ? "夜间" : "未知(" + skinId + ")";
-            tvSkinDebug.setText("SKIN: " + skinId + " (" + desc + ")");
-        } catch (Exception e) {
-            tvSkinDebug.setText("SKIN: 读取失败 - " + e.getMessage());
-        }
-    }
-
     private void loadPreferences() {
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isMinimalStyle = sp.getBoolean(KEY_IS_MINIMAL, false);
@@ -191,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
         themeColor = sp.getInt(KEY_THEME_COLOR, 0xFF4FC3F7);
         isServiceOnlyMode = sp.getBoolean(KEY_IS_SERVICE_ONLY, false);
         backgroundMode = sp.getInt("background_mode", 0);
-        cruiseEnabled = sp.getBoolean("cruise_enabled", true);
 
         updateStartupSelection();
         updateStyleSelection();
@@ -281,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
                 .putInt(KEY_THEME_COLOR, themeColor)
                 .putBoolean(KEY_IS_SERVICE_ONLY, isServiceOnlyMode)
                 .putInt("background_mode", backgroundMode)
-                .putBoolean("cruise_enabled", cruiseEnabled)
                 .apply();
     }
 
@@ -373,24 +321,6 @@ public class MainActivity extends AppCompatActivity {
         cardBgSemi.setOnClickListener(v -> selectBackgroundMode(1));
         cardBgTransparent.setOnClickListener(v -> selectBackgroundMode(2));
         btnGoHome.setOnClickListener(v -> moveTaskToBack(true));
-        cbCruiseEnabled.setChecked(cruiseEnabled);
-        if (tvCruiseStatus != null) tvCruiseStatus.setText(cruiseEnabled ? "巡航窗已启用" : "巡航窗已禁用");
-        CompoundButton.OnCheckedChangeListener cruiseListener = (buttonView, isChecked) -> {
-            cruiseEnabled = isChecked;
-            savePreferences();
-            if (tvCruiseStatus != null) tvCruiseStatus.setText(isChecked ? "巡航窗已启用" : "巡航窗已禁用");
-            FloatingWindowManager manager = FloatingWindowManager.getInstance();
-            if (manager != null) {
-                manager.setCruiseEnabled(isChecked);
-                if (!isChecked && manager.isActive() && manager.getCurrentMode() == FloatingWindowManager.MODE_CRUISE) {
-                    manager.hide();
-                }
-            }
-        };
-        cbCruiseEnabled.setOnCheckedChangeListener(cruiseListener);
-        if (cardCruiseToggle != null) {
-            cardCruiseToggle.setOnClickListener(v -> cbCruiseEnabled.toggle());
-        }
 
         sbScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -496,14 +426,10 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         updateStatusText();
         scheduleStatusRefresh();
-        if (isGetSkinDebug) updateSkinDebug(); // 测试: 回来时刷新
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (skinObserver != null) {
-            getContentResolver().unregisterContentObserver(skinObserver);
-        }
     }
 }
