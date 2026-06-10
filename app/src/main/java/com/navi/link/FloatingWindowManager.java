@@ -252,6 +252,10 @@ public class FloatingWindowManager {
 
     public void show() {
         currentMode = MODE_CRUISE;
+        if (!isCruiseEnabled()) {
+            isShowing = true;
+            return;
+        }
         recreateWindow();
     }
 
@@ -301,6 +305,15 @@ public class FloatingWindowManager {
         handler.removeCallbacks(naviSwitchRunnable);
         handler.removeCallbacks(trafficLightTimeoutRunnable);
         handler.removeCallbacks(cruiseGraceRunnable);
+        if (!isCruiseEnabled()) {
+            // 巡航未启用，移除窗口
+            if (floatingView != null) {
+                try { windowManager.removeView(floatingView); } catch (Exception ignored) {}
+                floatingView = null;
+                isShowing = false;
+            }
+            return;
+        }
         shouldHideAfterRecreate = false;
         if (currentMode != MODE_CRUISE) {
             currentMode = MODE_CRUISE;
@@ -320,6 +333,11 @@ public class FloatingWindowManager {
 
     public int getCurrentMode() {
         return currentMode;
+    }
+
+    public boolean isCruiseEnabled() {
+        SharedPreferences sp = context.getSharedPreferences("floating_config", Context.MODE_PRIVATE);
+        return sp.getBoolean("cruise_enabled", true);
     }
 
     // ======================== 超时管理 ========================
@@ -454,6 +472,15 @@ public class FloatingWindowManager {
     }
 
     private void doNaviSwitch() {
+        if (currentMode == MODE_CRUISE && !isCruiseEnabled()) {
+            // 巡航未启用，移除窗口
+            if (floatingView != null) {
+                try { windowManager.removeView(floatingView); } catch (Exception ignored) {}
+                floatingView = null;
+                isShowing = false;
+            }
+            return;
+        }
         recreateWindow();
         if (shouldHideAfterRecreate && floatingView != null) {
             floatingView.setVisibility(View.GONE);

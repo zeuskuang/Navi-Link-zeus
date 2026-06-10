@@ -77,8 +77,10 @@ public class AmapNaviReceiver extends BroadcastReceiver {
                     // 导航模式但无新icon，立即切换到巡航模式
                     manager.switchToCruiseMode();
                 }
-                // 巡航模式
-                handleCruiseInfo(intent, manager);
+                // 巡航模式：只有巡航启用时才处理数据
+                if (manager.isCruiseEnabled()) {
+                    handleCruiseInfo(intent, manager);
+                }
             }
         }
     }

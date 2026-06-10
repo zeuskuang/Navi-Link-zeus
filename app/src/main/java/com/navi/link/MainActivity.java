@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.ScrollView;
@@ -72,11 +73,15 @@ public class MainActivity extends AppCompatActivity {
     private View[] themeChips;
     private TextView tvScaleValue;
     private TextView tvStatus;
+    private CompoundButton cbCruiseEnabled;
+    private TextView tvCruiseStatus;
+    private MaterialCardView cardCruiseToggle;
 
     private boolean isMinimalStyle = false;
     private int styleMode = 0;
     private boolean isServiceOnlyMode = false;
     private int backgroundMode = 0; // 0=深色, 1=半透明, 2=全透明
+    private boolean cruiseEnabled = true;
 
     private int themeColor = 0xFF4FC3F7;
 
@@ -122,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
         sbScale = findViewById(R.id.sb_scale);
         tvScaleValue = findViewById(R.id.tv_scale_value);
         tvStatus = findViewById(R.id.tv_status);
+        cbCruiseEnabled = findViewById(R.id.cb_cruise_enabled);
+        tvCruiseStatus = findViewById(R.id.tv_cruise_status);
+        cardCruiseToggle = findViewById(R.id.card_cruise_toggle);
         llThemeColors = findViewById(R.id.ll_theme_colors);
 
         View contentView = findViewById(android.R.id.content);
@@ -141,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
         themeColor = sp.getInt(KEY_THEME_COLOR, 0xFF4FC3F7);
         isServiceOnlyMode = sp.getBoolean(KEY_IS_SERVICE_ONLY, false);
         backgroundMode = sp.getInt("background_mode", 0);
+        cruiseEnabled = sp.getBoolean("cruise_enabled", true);
 
         updateStartupSelection();
         updateStyleSelection();
@@ -230,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
                 .putInt(KEY_THEME_COLOR, themeColor)
                 .putBoolean(KEY_IS_SERVICE_ONLY, isServiceOnlyMode)
                 .putInt("background_mode", backgroundMode)
+                .putBoolean("cruise_enabled", cruiseEnabled)
                 .apply();
     }
 
@@ -321,6 +331,27 @@ public class MainActivity extends AppCompatActivity {
         cardBgSemi.setOnClickListener(v -> selectBackgroundMode(1));
         cardBgTransparent.setOnClickListener(v -> selectBackgroundMode(2));
         btnGoHome.setOnClickListener(v -> moveTaskToBack(true));
+
+        cbCruiseEnabled.setChecked(cruiseEnabled);
+        if (tvCruiseStatus != null) tvCruiseStatus.setText(cruiseEnabled ? "巡航窗已启用" : "巡航窗已禁用");
+        CompoundButton.OnCheckedChangeListener cruiseListener = (buttonView, isChecked) -> {
+            cruiseEnabled = isChecked;
+            savePreferences();
+            if (tvCruiseStatus != null) tvCruiseStatus.setText(isChecked ? "巡航窗已启用" : "巡航窗已禁用");
+            // 直接操作悬浮窗，立即生效
+            FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+            if (fwm != null) {
+                if (isChecked) {
+                    fwm.show();
+                } else if (fwm.getCurrentMode() == FloatingWindowManager.MODE_CRUISE) {
+                    fwm.hide();
+                }
+            }
+        };
+        cbCruiseEnabled.setOnCheckedChangeListener(cruiseListener);
+        if (cardCruiseToggle != null) {
+            cardCruiseToggle.setOnClickListener(v -> cbCruiseEnabled.toggle());
+        }
 
         sbScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
