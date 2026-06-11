@@ -701,9 +701,9 @@ public class FloatingWindowManager {
                 if (cachedCameraSpeed > 0) {
                     tvCnSpeedLimit.setText(String.valueOf(cachedCameraSpeed));
 //                    tvCnSpeedLimit.setVisibility(View.VISIBLE);
-                }/* else {
-                    tvCnSpeedLimit.setVisibility(View.GONE);
-                }*/
+                } else {
+                    tvCnSpeedLimit.setText("--");
+                }
             }
             if (laneLineView != null && cachedDriveWayJson != null)
                 laneLineView.updateLanes(cachedDriveWayJson);
@@ -1257,9 +1257,9 @@ public class FloatingWindowManager {
                 if (cameraSpeed > 0) {
                     tvCnSpeedLimit.setText(String.valueOf(cameraSpeed));
 //                    tvCnSpeedLimit.setVisibility(View.VISIBLE);
-                } /*else {
-                    tvCnSpeedLimit.setVisibility(View.GONE);
-                }*/
+                } else {
+                    tvCnSpeedLimit.setText("--");
+                }
             }
             // 速度/路名文字变化后重新测量窗口，避免内容变宽时被旧宽度截断
             remeasureWindow();

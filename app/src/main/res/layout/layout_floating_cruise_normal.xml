@@ -78,7 +78,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginStart="6dp"
-                    android:text="120"
+                    android:text="--"
                     android:gravity="center"
                     android:background="@drawable/camera_shape"
                     android:textColor="#000000"
