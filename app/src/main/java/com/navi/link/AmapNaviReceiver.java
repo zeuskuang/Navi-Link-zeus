@@ -58,7 +58,7 @@ public class AmapNaviReceiver extends BroadcastReceiver {
             return;
         }
 
-        // 昼夜模式切换广播
+        // 昼夜模式切换及前后台、结束状态广播
         if (keyType == 10019) {
             int extraState = intent.getIntExtra("EXTRA_STATE", -1);
             if (extraState == 37 || extraState == 38) {
@@ -67,12 +67,19 @@ public class AmapNaviReceiver extends BroadcastReceiver {
             } else if (extraState == 3 || extraState == 4) {
                 boolean isForeground = (extraState == 3);
                 manager.onAmapForegroundChanged(isForeground);
+            } else if (extraState == 9) {
+                manager.onNavigationEnded();
+            } else if (extraState == 25) {
+                manager.onCruiseEnded();
             }
             return;
         }
 
         if (keyType == 10001) {
             // 导航或巡航信息
+            if (manager.isNavigationJustEnded() || manager.isCruiseJustEnded()) {
+                return;
+            }
             manager.resetWatchdog();
 
             int icon = intent.getIntExtra("NEW_ICON", 0);
@@ -85,8 +92,8 @@ public class AmapNaviReceiver extends BroadcastReceiver {
                 manager.switchToNaviMode();
                 handleNaviInfo(intent, manager);
             } else {
-                if (manager.getCurrentMode() == FloatingWindowManager.MODE_NAVI) {
-                    // 导航模式但无新icon，立即切换到巡航模式
+                if (manager.getCurrentMode() == FloatingWindowManager.MODE_NAVI || manager.isNaviWindowActive()) {
+                    // 导航模式但无新icon，或当前依然是导航窗口，立即切换到巡航模式
                     manager.switchToCruiseMode();
                 }
                 // 巡航模式：只有巡航启用时才处理数据

@@ -20,6 +20,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.widget.SwitchCompat;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -73,15 +75,19 @@ public class MainActivity extends AppCompatActivity {
     private View[] themeChips;
     private TextView tvScaleValue;
     private TextView tvStatus;
-    private CompoundButton cbCruiseEnabled;
+    private SwitchCompat cbCruiseEnabled;
     private TextView tvCruiseStatus;
     private MaterialCardView cardCruiseToggle;
-    private CompoundButton cbNormalLaneEnabled;
+    private SwitchCompat cbNormalLaneEnabled;
     private TextView tvNormalLaneStatus;
     private MaterialCardView cardNormalLaneToggle;
-    private CompoundButton cbAvoidForegroundEnabled;
+    private SwitchCompat cbAvoidForegroundEnabled;
     private TextView tvAvoidForegroundStatus;
     private MaterialCardView cardAvoidForegroundToggle;
+    private TextView tvSys;
+    private TextView tvStyle;
+    private TextView tvOperation;
+
 
     private boolean isMinimalStyle = false;
     private int styleMode = 0;
@@ -145,7 +151,9 @@ public class MainActivity extends AppCompatActivity {
         tvAvoidForegroundStatus = findViewById(R.id.tv_avoid_foreground_status);
         cardAvoidForegroundToggle = findViewById(R.id.card_avoid_foreground_toggle);
         llThemeColors = findViewById(R.id.ll_theme_colors);
-
+        tvSys = findViewById(R.id.tv_sys);
+        tvStyle = findViewById(R.id.tv_style);
+        tvOperation = findViewById(R.id.tv_operation);
         View contentView = findViewById(android.R.id.content);
         if (contentView instanceof ScrollView) {
             ViewCompat.setOnApplyWindowInsetsListener(contentView, (view, windowInsetsCompat) -> {
@@ -167,9 +175,6 @@ public class MainActivity extends AppCompatActivity {
         normalLaneEnabled = sp.getBoolean("normal_navi_lane_enabled", false);
         avoidForegroundEnabled = sp.getBoolean("hide_on_amap_foreground", false);
  
-        updateStartupSelection();
-        updateStyleSelection();
-        updateBackgroundModeSelection();
         updateSeekBarToCurrentScale();
         
         if (cbNormalLaneEnabled != null) {
@@ -185,17 +190,7 @@ public class MainActivity extends AppCompatActivity {
             tvAvoidForegroundStatus.setText(avoidForegroundEnabled ? "高德前台时隐藏悬浮窗" : "前台正常显示浮窗");
         }
 
-        sbScale.setProgressTintList(ColorStateList.valueOf(getAccentColor()));
-        sbScale.setThumbTintList(ColorStateList.valueOf(getAccentColor()));
-        // 回到桌面按钮：深色主题时保持暗底白字，浅色主题时跟随主题色
-        if (isDarkColor(themeColor)) {
-            cvGoHome.setCardBackgroundColor(0xFF1E1E1E);
-            btnGoHome.setTextColor(Color.WHITE);
-        } else {
-            cvGoHome.setCardBackgroundColor(themeColor);
-            btnGoHome.setTextColor(Color.WHITE);
-        }
-        tvScaleValue.setTextColor(getAccentColor());
+        applyThemeToViews();
 
         initThemeColorChips();
     }
@@ -303,6 +298,90 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void updateSwitchTheme(SwitchCompat switchView, int activeColor) {
+        if (switchView == null) return;
+        
+        // Thumb ColorStateList:
+        // Checked state: activeColor
+        // Unchecked state: light white/grey (#FFD0D0D0)
+        int[][] thumbStates = new int[][] {
+            new int[] { android.R.attr.state_checked },
+            new int[] { -android.R.attr.state_checked }
+        };
+        int[] thumbColors = new int[] {
+            activeColor,
+            Color.parseColor("#FFD0D0D0")
+        };
+        switchView.setThumbTintList(new ColorStateList(thumbStates, thumbColors));
+
+        // Track ColorStateList:
+        // Checked state: activeColor with 40% opacity (0x66 alpha)
+        // Unchecked state: grey (#FF555555)
+        int[][] trackStates = new int[][] {
+            new int[] { android.R.attr.state_checked },
+            new int[] { -android.R.attr.state_checked }
+        };
+        int trackActiveColor = Color.argb(
+            0x66,
+            Color.red(activeColor),
+            Color.green(activeColor),
+            Color.blue(activeColor)
+        );
+        int[] trackColors = new int[] {
+            trackActiveColor,
+            Color.parseColor("#FF555555")
+        };
+        switchView.setTrackTintList(new ColorStateList(trackStates, trackColors));
+    }
+
+    private void applyThemeToViews() {
+        int accentColor = getAccentColor();
+        ColorStateList accentColorStateList = ColorStateList.valueOf(accentColor);
+
+        // 更新选择项卡片的描边颜色
+        updateStartupSelection();
+        updateStyleSelection();
+        updateBackgroundModeSelection();
+
+        // 回到桌面按钮：深色主题时保持暗底白字，浅色主题时跟随主题色
+        if (isDarkColor(themeColor)) {
+            cvGoHome.setCardBackgroundColor(0xFF262626);
+            btnGoHome.setTextColor(Color.WHITE);
+        } else {
+            cvGoHome.setCardBackgroundColor(themeColor);
+            btnGoHome.setTextColor(Color.WHITE);
+        }
+
+        // 更新单选按钮（RadioButton）的着色
+        rbNormal.setButtonTintList(accentColorStateList);
+        rbMinimal.setButtonTintList(accentColorStateList);
+        rbFull.setButtonTintList(accentColorStateList);
+        rbServiceOnly.setButtonTintList(accentColorStateList);
+        rbNormalStart.setButtonTintList(accentColorStateList);
+        rbBgDark.setButtonTintList(accentColorStateList);
+        rbBgSemi.setButtonTintList(accentColorStateList);
+        rbBgTransparent.setButtonTintList(accentColorStateList);
+
+        // 更新开关（SwitchCompat）的主题颜色
+        updateSwitchTheme(cbCruiseEnabled, accentColor);
+        updateSwitchTheme(cbNormalLaneEnabled, accentColor);
+        updateSwitchTheme(cbAvoidForegroundEnabled, accentColor);
+
+        // 更新 SeekBar 与文本颜色
+        sbScale.setProgressTintList(accentColorStateList);
+        sbScale.setThumbTintList(accentColorStateList);
+        tvScaleValue.setTextColor(accentColor);
+
+        tvStyle.setTextColor(accentColor);
+        tvSys.setTextColor(accentColor);
+        tvOperation.setTextColor(accentColor);
+        // 通知悬浮窗管理器更新主题色
+        FloatingWindowManager manager = FloatingWindowManager.getInstance();
+        if (manager != null) {
+            manager.applyThemeColor(themeColor);
+        }
+    }
+
     private void selectThemeColor(int index) {
         int color = THEME_COLORS[index];
         if (themeColor == color) return;
@@ -316,32 +395,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        int accentColor = getAccentColor();
-        cardNormal.setStrokeColor(styleMode == 0 ? accentColor : Color.parseColor("#444444"));
-        cardMinimal.setStrokeColor(styleMode == 1 ? accentColor : Color.parseColor("#444444"));
-        cardFull.setStrokeColor(styleMode == 2 ? accentColor : Color.parseColor("#444444"));
-        cardServiceOnly.setStrokeColor(isServiceOnlyMode ? accentColor : Color.parseColor("#444444"));
-        cardNormalStart.setStrokeColor(isServiceOnlyMode ? Color.parseColor("#444444") : accentColor);
-//        btnGoHome.setBackgroundTintList(ColorStateList.valueOf(accentColor));
-        // 回到桌面按钮：深色主题时保持暗底白字
-        if (isDarkColor(themeColor)) {
-            cvGoHome.setCardBackgroundColor(0xFF1E1E1E);
-        } else {
-            cvGoHome.setCardBackgroundColor(themeColor);
-        }
-        rbNormal.setButtonTintList(ColorStateList.valueOf(accentColor));
-        rbMinimal.setButtonTintList(ColorStateList.valueOf(accentColor));
-        rbFull.setButtonTintList(ColorStateList.valueOf(accentColor));
-        rbServiceOnly.setButtonTintList(ColorStateList.valueOf(accentColor));
-        rbNormalStart.setButtonTintList(ColorStateList.valueOf(accentColor));
-        sbScale.setProgressTintList(ColorStateList.valueOf(accentColor));
-        sbScale.setThumbTintList(ColorStateList.valueOf(accentColor));
-        tvScaleValue.setTextColor(accentColor);
-
-        FloatingWindowManager manager = FloatingWindowManager.getInstance();
-        if (manager != null) {
-            manager.applyThemeColor(themeColor);
-        }
+        applyThemeToViews();
     }
 
     private int dpToPx(int dp) {

@@ -2,18 +2,19 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#FF121212"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:padding="24dp"
-        android:layout_width="fill_parent"
+        android:padding="20dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- Title -->
         <TextView
             android:id="@+id/tv_title"
-            android:textSize="28sp"
+            android:textSize="26sp"
             android:textStyle="bold"
             android:textColor="#FFFFFFFF"
             android:layout_width="wrap_content"
@@ -22,711 +23,803 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <LinearLayout
-            android:id="@+id/ll_startup_container"
-            android:orientation="vertical"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_title">
-
-            <TextView
-                android:textSize="13sp"
-                android:textColor="#FFAAAAAA"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="启动方式" />
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_service_only"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="12dp"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/rb_service_only"
-                            android:textSize="14sp"
-                            android:textColor="#FFFFFFFF"
-                            android:clickable="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="只启动服务"
-                            android:buttonTint="#FF4FC3F7" />
-
-                        <TextView
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center"
-                            android:text="点击图标直接启动服务" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_normal_start"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/rb_normal_start"
-                            android:textSize="14sp"
-                            android:textColor="#FFFFFFFF"
-                            android:clickable="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="正常打开"
-                            android:buttonTint="#FF4FC3F7" />
-
-                        <TextView
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center"
-                            android:text="点击图标打开配置页面" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-<!--                <com.google.android.material.button.MaterialButton-->
-<!--                    android:id="@+id/btn_go_home"-->
-<!--                   -->
-<!--                    android:text="回到桌面"-->
-<!--                    android:textSize="16sp"-->
-<!--                    android:textColor="#FFFFFFFF"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_weight="1"-->
-<!--                    app:cardBackgroundColor="#FF1E1E1E"-->
-<!--                    app:cardCornerRadius="10dp"-->
-<!--                    app:cardElevation="0dp"-->
-<!--                    app:strokeColor="#FF444444"-->
-<!--                    app:strokeWidth="1dp" />-->
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/cv_go_home"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp">
-                    <TextView
-                        android:id="@+id/btn_go_home"
-                        android:gravity="center"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="回到桌面"
-                        android:textColor="#ffffff"
-                        android:textSize="25sp"/>
-                </androidx.cardview.widget.CardView>
-            </LinearLayout>
-
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/ll_style_container"
-            android:orientation="vertical"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_startup_container">
-
-            <TextView
-                android:textSize="13sp"
-                android:textColor="#FFAAAAAA"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="悬浮窗样式" />
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <!-- 巡航窗开关卡片 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_cruise_toggle"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="6dp"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/cb_cruise_enabled"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="true" />
-
-                        <TextView
-                            android:id="@+id/tv_cruise_status"
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="巡航窗已启用" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_normal"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/rb_normal"
-                            android:textSize="14sp"
-                            android:textColor="#FFFFFFFF"
-                            android:clickable="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="常规"
-                            android:buttonTint="#FF4FC3F7" />
-
-                        <TextView
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center"
-                            android:text="完整导航信息" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_minimal"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/rb_minimal"
-                            android:textSize="14sp"
-                            android:textColor="#FFFFFFFF"
-                            android:clickable="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="灵动岛"
-                            android:buttonTint="#FF4FC3F7" />
-
-                        <TextView
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center"
-                            android:text="精简灵动岛风格" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_full"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/rb_full"
-                            android:textSize="14sp"
-                            android:textColor="#FFFFFFFF"
-                            android:clickable="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="全数据"
-                            android:buttonTint="#FF4FC3F7" />
-
-                        <TextView
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center"
-                            android:text="竖版全导航信息" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_scale_label"
-            android:textSize="16sp"
-            android:textColor="#FFAAAAAA"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="悬浮窗缩放"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_style_container" />
-
-        <TextView
-            android:id="@+id/tv_scale_value"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#FF4FC3F7"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="1.0x"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tv_scale_label" />
-
-        <SeekBar
-            android:id="@+id/sb_scale"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:max="15"
-            android:progress="5"
-            android:progressTint="#FF4FC3F7"
-            android:thumbTint="#FF4FC3F7"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_scale_label" />
-
-        <LinearLayout
-            android:id="@+id/layout_scale_range"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/sb_scale">
-
-            <TextView
-                android:textSize="12sp"
-                android:textColor="#FF666666"
-                android:gravity="start"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="0.5x" />
-
-            <TextView
-                android:textSize="12sp"
-                android:textColor="#FF666666"
-                android:gravity="end"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="2.0x" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_theme_label"
-            android:textSize="16sp"
-            android:textColor="#FFAAAAAA"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="主色调"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_scale_range" />
-
-        <LinearLayout
-            android:id="@+id/ll_theme_colors"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_theme_label" />
-
-        <TextView
-            android:id="@+id/tv_bg_label"
-            android:textSize="16sp"
-            android:textColor="#FFAAAAAA"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="背景模式"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_theme_colors" />
-
-        <LinearLayout
-            android:id="@+id/ll_bg_modes"
-            android:orientation="horizontal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_bg_label">
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_bg_dark"
-                android:focusable="true"
-                android:clickable="true"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                app:cardBackgroundColor="#FF1E1E1E"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#FF444444"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content">
-
-                    <RadioButton
-                        android:id="@+id/rb_bg_dark"
-                        android:textSize="14sp"
-                        android:textColor="#FFFFFFFF"
-                        android:clickable="false"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="深色"
-                        android:buttonTint="#FF4FC3F7" />
-
-                    <TextView
-                        android:textSize="11sp"
-                        android:textColor="#FF888888"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:gravity="center"
-                        android:text="原有深色背景" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_bg_semi"
-                android:focusable="true"
-                android:clickable="true"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                app:cardBackgroundColor="#FF1E1E1E"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#FF444444"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content">
-
-                    <RadioButton
-                        android:id="@+id/rb_bg_semi"
-                        android:textSize="14sp"
-                        android:textColor="#FFFFFFFF"
-                        android:clickable="false"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="半透明"
-                        android:buttonTint="#FF4FC3F7" />
-
-                    <TextView
-                        android:textSize="11sp"
-                        android:textColor="#FF888888"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:gravity="center"
-                        android:text="50%透明背景" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_bg_transparent"
-                android:focusable="true"
-                android:clickable="true"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:cardBackgroundColor="#FF1E1E1E"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp"
-                app:strokeColor="#FF444444"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content">
-
-                    <RadioButton
-                        android:id="@+id/rb_bg_transparent"
-                        android:textSize="14sp"
-                        android:textColor="#FFFFFFFF"
-                        android:clickable="false"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="全透明"
-                        android:buttonTint="#FF4FC3F7" />
-
-                    <TextView
-                        android:textSize="11sp"
-                        android:textColor="#FF888888"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:gravity="center"
-                        android:text="文字跟随昼夜" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/ll_other_settings_container"
-            android:orientation="vertical"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_bg_modes">
-
-            <TextView
-                android:textSize="13sp"
-                android:textColor="#FFAAAAAA"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="常规导航设置" />
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <!-- 常规车道线开关卡片 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_normal_lane_toggle"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/cb_normal_lane_enabled"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="false" />
-
-                        <TextView
-                            android:id="@+id/tv_normal_lane_status"
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="车道线已禁用" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- 占位空白以保持布局平衡 -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="2" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/ll_avoid_settings_container"
-            android:orientation="vertical"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_other_settings_container">
-
-            <TextView
-                android:textSize="13sp"
-                android:textColor="#FFAAAAAA"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="避让设置" />
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <!-- 前台避让开关卡片 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_avoid_foreground_toggle"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FF1E1E1E"
-                    app:cardCornerRadius="10dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#FF444444"
-                    app:strokeWidth="1dp">
-                    <LinearLayout
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content">
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/cb_avoid_foreground_enabled"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="false" />
-
-                        <TextView
-                            android:id="@+id/tv_avoid_foreground_status"
-                            android:textSize="11sp"
-                            android:textColor="#FF888888"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="前台正常显示浮窗" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- 占位空白以保持布局平衡 -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="2" />
-            </LinearLayout>
-        </LinearLayout>
-
+        <!-- Status -->
         <TextView
             android:id="@+id/tv_status"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textColor="#FF888888"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="6dp"
+            android:text="○ 悬浮窗未启动"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_avoid_settings_container" />
+            app:layout_constraintTop_toBottomOf="@id/tv_title" />
+
+        <!-- Cards Container -->
+        <LinearLayout
+            android:id="@+id/ll_cards_container"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_status"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Card 1: 系统与服务 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_group_service"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#FF1E1E1E"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:paddingBottom="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/tv_sys"
+                        android:text="系统与服务"
+                        android:textSize="14sp"
+                        android:textColor="#FF4FC3F7"
+                        android:textStyle="bold"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="12dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <!-- Three columns for startup mode selection and go home -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_service_only"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="12dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_service_only"
+                                    android:textSize="14sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="只启动服务"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="11sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:gravity="center"
+                                    android:text="点击图标直接启动" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_normal_start"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="12dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_normal_start"
+                                    android:textSize="14sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="正常打开"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="11sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:gravity="center"
+                                    android:text="点击图标打开配置" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Go home button -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cv_go_home"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <TextView
+                                android:id="@+id/btn_go_home"
+                                android:gravity="center"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:text="回到桌面"
+                                android:textColor="#ffffff"
+                                android:textStyle="bold"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?android:attr/selectableItemBackground"
+                                android:textSize="15sp"/>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 2: 外观与个性化 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_group_appearance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#FF1E1E1E"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:paddingBottom="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/tv_style"
+                        android:text="外观与个性化"
+                        android:textSize="14sp"
+                        android:textColor="#FF4FC3F7"
+                        android:textStyle="bold"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="12dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <!-- Style choices -->
+                    <TextView
+                        android:text="悬浮窗样式"
+                        android:textSize="12sp"
+                        android:textColor="#FFAAAAAA"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginBottom="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_normal"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_normal"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="常规"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="完整导航" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_minimal"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_minimal"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="灵动岛"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="精简岛风" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_full"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_full"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="全数据"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="竖版完整" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#1AFFFFFF" />
+
+                    <!-- Background mode choices -->
+                    <TextView
+                        android:text="背景模式"
+                        android:textSize="12sp"
+                        android:textColor="#FFAAAAAA"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginBottom="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_bg_dark"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_bg_dark"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="深色"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="暗色护眼" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_bg_semi"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_bg_semi"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="半透明"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="50%透明" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_bg_transparent"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            app:cardBackgroundColor="#FF262626"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#FF444444"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="10dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <RadioButton
+                                    android:id="@+id/rb_bg_transparent"
+                                    android:textSize="13sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:clickable="false"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="全透明"
+                                    android:buttonTint="#FF4FC3F7" />
+
+                                <TextView
+                                    android:textSize="10sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center"
+                                    android:text="无背景遮挡" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#1AFFFFFF" />
+
+                    <!-- Scale control -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:text="悬浮窗缩放"
+                            android:textSize="14sp"
+                            android:textColor="#FFFFFFFF"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/tv_scale_value"
+                            android:text="1.0x"
+                            android:textSize="15sp"
+                            android:textColor="#FF4FC3F7"
+                            android:textStyle="bold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/sb_scale"
+                        android:max="15"
+                        android:progress="5"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:text="0.5x"
+                            android:textSize="11sp"
+                            android:textColor="#FF666666"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                        <TextView
+                            android:text="2.0x"
+                            android:textSize="11sp"
+                            android:textColor="#FF666666"
+                            android:gravity="end"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#1AFFFFFF" />
+
+                    <!-- Theme Color control -->
+                    <TextView
+                        android:text="主色调"
+                        android:textSize="12sp"
+                        android:textColor="#FFAAAAAA"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <HorizontalScrollView
+                        android:scrollbars="none"
+                        android:layout_marginTop="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <LinearLayout
+                            android:id="@+id/ll_theme_colors"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 3: 功能与避让 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_group_features"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#FF1E1E1E"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/tv_operation"
+                        android:text="功能与避让"
+                        android:textSize="14sp"
+                        android:textColor="#FF4FC3F7"
+                        android:textStyle="bold"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <!-- Option 1: Cruise Switch Row -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_cruise_toggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@android:color/transparent"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+
+                        <LinearLayout
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="12dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:orientation="vertical"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1">
+
+                                <TextView
+                                    android:text="启用巡航窗口"
+                                    android:textSize="15sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+
+                                <TextView
+                                    android:id="@+id/tv_cruise_status"
+                                    android:text="巡航窗已启用"
+                                    android:textSize="12sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_marginTop="2dp"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/cb_cruise_enabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="#1AFFFFFF" />
+
+                    <!-- Option 2: Lane Line Switch Row -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_normal_lane_toggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@android:color/transparent"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+
+                        <LinearLayout
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="12dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:orientation="vertical"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1">
+
+                                <TextView
+                                    android:text="常规车道线"
+                                    android:textSize="15sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+
+                                <TextView
+                                    android:id="@+id/tv_normal_lane_status"
+                                    android:text="车道线已启用"
+                                    android:textSize="12sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_marginTop="2dp"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/cb_normal_lane_enabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="#1AFFFFFF" />
+
+                    <!-- Option 3: Avoid Foreground Switch Row -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_avoid_foreground_toggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@android:color/transparent"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+
+                        <LinearLayout
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="12dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:orientation="vertical"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1">
+
+                                <TextView
+                                    android:text="高德前台避让"
+                                    android:textSize="15sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+
+                                <TextView
+                                    android:id="@+id/tv_avoid_foreground_status"
+                                    android:text="前台正常显示浮窗"
+                                    android:textSize="12sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_marginTop="2dp"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/cb_avoid_foreground_enabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
