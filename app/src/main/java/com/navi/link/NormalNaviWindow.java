@@ -26,6 +26,15 @@ public class NormalNaviWindow extends BaseFloatingWindow {
     private View vDivider;
     private LaneLineView laneLineView;
 
+    private String mOriginalRoadName = "";
+    private String mExitName = "";
+    private String mExitDirection = "";
+
+    private View llCameraDistGroup;
+    private TextView tvCameraDist;
+    private int mCameraDist = 0;
+    private int mTrafficLightCountdown = 0;
+
     private View llTrafficLightGroup;
     private ImageView ivLightIcon;
     private ImageView ivLightArrow;
@@ -50,6 +59,8 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         tvNaviLightCount = floatingView.findViewById(R.id.tv_navi_light_count);
         vDivider = floatingView.findViewById(R.id.v_divider);
         laneLineView = floatingView.findViewById(R.id.lane_line_view);
+        llCameraDistGroup = floatingView.findViewById(R.id.ll_camera_dist_group);
+        tvCameraDist = floatingView.findViewById(R.id.tv_camera_dist);
 
         llTrafficLightGroup = floatingView.findViewById(R.id.ll_traffic_light_group);
         if (llTrafficLightGroup != null) {
@@ -85,9 +96,10 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         if (tvAction != null) {
             tvAction.setText(actionStr);
         }
-        if (tvRoadName != null) {
-            tvRoadName.setText(roadName);
-        }
+        mOriginalRoadName = roadName;
+        updateRoadAndExitViews();
+        mCameraDist = cameraDist;
+        updateCameraDistVisibility();
         if (tvSummary != null) {
             tvSummary.setText(summaryStr);
         }
@@ -110,7 +122,11 @@ public class NormalNaviWindow extends BaseFloatingWindow {
 
     @Override
     public void updateTrafficLight(int status, int dir, int countdown) {
-        if (llTrafficLightGroup == null) return;
+        mTrafficLightCountdown = countdown;
+        if (llTrafficLightGroup == null) {
+            updateCameraDistVisibility();
+            return;
+        }
         if (countdown <= 0) {
             llTrafficLightGroup.setVisibility(View.GONE);
             ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroup.getTag();
@@ -119,9 +135,11 @@ public class NormalNaviWindow extends BaseFloatingWindow {
                 llTrafficLightGroup.setTag(null);
             }
             llTrafficLightGroup.setAlpha(1f);
+            updateCameraDistVisibility();
             return;
         }
         llTrafficLightGroup.setVisibility(View.VISIBLE);
+        updateCameraDistVisibility();
         if (ivLightIcon != null) {
             ivLightIcon.setImageResource(getNaviLightIconRes(status));
         }
@@ -152,6 +170,22 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         }
     }
 
+    private void updateCameraDistVisibility() {
+        if (llCameraDistGroup == null) return;
+        if (mTrafficLightCountdown > 0) {
+            llCameraDistGroup.setVisibility(View.GONE);
+        } else {
+            if (mCameraDist > 0) {
+                if (tvCameraDist != null) {
+                    tvCameraDist.setText(mCameraDist + "米");
+                }
+                llCameraDistGroup.setVisibility(View.VISIBLE);
+            } else {
+                llCameraDistGroup.setVisibility(View.GONE);
+            }
+        }
+    }
+
     @Override
     public void updateLaneLines(String driveWayJson) {
         if (laneLineView != null) {
@@ -165,15 +199,28 @@ public class NormalNaviWindow extends BaseFloatingWindow {
 
     @Override
     public void updateExitInfo(String exitName, String exitDirection) {
-        if (tvExitInfo == null) return;
-        String name = exitName != null ? exitName.trim() : "";
-        String dir = exitDirection != null ? exitDirection.trim() : "";
-        if (name.isEmpty()) {
-            tvExitInfo.setVisibility(View.GONE);
-        } else {
-            String exitText = name + (dir.isEmpty() ? "" : "  " + dir);
-            tvExitInfo.setText(exitText);
-            tvExitInfo.setVisibility(View.VISIBLE);
+        mExitName = exitName;
+        mExitDirection = exitDirection;
+        updateRoadAndExitViews();
+    }
+
+    private void updateRoadAndExitViews() {
+        if (tvExitInfo != null) {
+            String name = mExitName != null ? mExitName.trim() : "";
+            if (name.isEmpty()) {
+                tvExitInfo.setVisibility(View.GONE);
+            } else {
+                tvExitInfo.setText(name);
+                tvExitInfo.setVisibility(View.VISIBLE);
+            }
+        }
+        if (tvRoadName != null) {
+            String dir = mExitDirection != null ? mExitDirection.trim() : "";
+            if (!dir.isEmpty()) {
+                tvRoadName.setText(dir);
+            } else {
+                tvRoadName.setText(mOriginalRoadName != null ? mOriginalRoadName : "");
+            }
         }
     }
 
@@ -231,6 +278,7 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         if (ivTurnIcon != null) ivTurnIcon.setColorFilter(textPrimary);
         if (vDivider != null) vDivider.setBackgroundColor(textPrimary);
         if (tvExitInfo != null) tvExitInfo.setTextColor(textSecondary);
+        if (tvCameraDist != null) tvCameraDist.setTextColor(textPrimary);
     }
 
     @Override
@@ -245,6 +293,7 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         if (ivTurnIcon != null) ivTurnIcon.clearColorFilter();
         if (vDivider != null) vDivider.setBackgroundColor(TEXT_PRIMARY_DARK);
         if (tvExitInfo != null) tvExitInfo.setTextColor(TEXT_SECONDARY_DARK);
+        if (tvCameraDist != null) tvCameraDist.setTextColor(TEXT_PRIMARY_DARK);
     }
 
     @Override
