@@ -89,9 +89,10 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
             }
             container.removeAllViews();
             android.view.LayoutInflater inflater = android.view.LayoutInflater.from(context);
-            int layoutRes = (count >= 3)
-                    ? R.layout.item_cruise_traffic_light_small
-                    : R.layout.item_cruise_traffic_light;
+//            int layoutRes = (count >= 3)
+//                    ? R.layout.item_cruise_traffic_light_small
+//                    : R.layout.item_cruise_traffic_light;
+            int layoutRes =  R.layout.item_cruise_traffic_light;
             for (int i = 0; i < count; i++) {
                 try {
                     JSONObject lightObj = lightsArray.getJSONObject(i);
@@ -197,7 +198,7 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
 
     @Override
     public void applyDayNightTextColors(boolean isNightMode) {
-        int textSecondary = isNightMode ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT;
+        int textSecondary = isNightMode ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT;
         if (tvCruiseRoadName != null) {
             tvCruiseRoadName.setTextColor(textSecondary);
         }
@@ -206,7 +207,7 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
     @Override
     public void resetToDefaultTextColors() {
         if (tvCruiseRoadName != null) {
-            tvCruiseRoadName.setTextColor(TEXT_SECONDARY_DARK);
+            tvCruiseRoadName.setTextColor(TEXT_PRIMARY_DARK);
         }
     }
 

@@ -5,8 +5,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -41,39 +39,7 @@
             android:foregroundServiceType="specialUse"
             tools:targetApi="q" />
 
-        <!-- 静态广播接收器：高德地图心跳/开机/蓝牙连接/车机ACC -->
-        <receiver
-            android:name=".BootAndWakeReceiver"
-            android:exported="true">
-            <intent-filter android:priority="1000">
-                <!-- 高德标准广播发送，高德运行即发出 -->
-                <action android:name="AUTONAVI_STANDARD_BROADCAST_SEND" />
-                
-                <!-- 传统开机广播 -->
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-                
-                <!-- 蓝牙设备已连接，车机唤醒时必经事件 -->
-                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
-                
-                <!-- 唤醒/解锁/电源 -->
-                <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
-                
-                <!-- 某些车机自定义的ACC广播 -->
-                <action android:name="com.syu.ms.action.ACC_ON" />
-                <action android:name="android.intent.action.ACC_EVENT" />
-            </intent-filter>
-            
-            <intent-filter android:priority="1000">
-                <!-- 外部U盘/SD卡挂载，也是休眠唤醒常见事件 -->
-                <action android:name="android.intent.action.MEDIA_MOUNTED" />
-                <data android:scheme="file" />
-            </intent-filter>
-        </receiver>
+
     </application>
 
 </manifest>

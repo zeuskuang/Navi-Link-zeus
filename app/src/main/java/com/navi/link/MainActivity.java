@@ -84,9 +84,6 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbAvoidForegroundEnabled;
     private TextView tvAvoidForegroundStatus;
     private MaterialCardView cardAvoidForegroundToggle;
-    private SwitchCompat cbAutostartEnabled;
-    private TextView tvAutostartStatus;
-    private MaterialCardView cardAutostartToggle;
     private TextView tvSys;
     private TextView tvStyle;
     private TextView tvOperation;
@@ -99,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean cruiseEnabled = true;
     private boolean normalLaneEnabled = false;
     private boolean avoidForegroundEnabled = false;
-    private boolean autostartEnabled = false;
 
     private int themeColor = 0xFF4FC3F7;
 
@@ -154,9 +150,6 @@ public class MainActivity extends AppCompatActivity {
         cbAvoidForegroundEnabled = findViewById(R.id.cb_avoid_foreground_enabled);
         tvAvoidForegroundStatus = findViewById(R.id.tv_avoid_foreground_status);
         cardAvoidForegroundToggle = findViewById(R.id.card_avoid_foreground_toggle);
-        cbAutostartEnabled = findViewById(R.id.cb_autostart_enabled);
-        tvAutostartStatus = findViewById(R.id.tv_autostart_status);
-        cardAutostartToggle = findViewById(R.id.card_autostart_toggle);
         llThemeColors = findViewById(R.id.ll_theme_colors);
         tvSys = findViewById(R.id.tv_sys);
         tvStyle = findViewById(R.id.tv_style);
@@ -181,7 +174,6 @@ public class MainActivity extends AppCompatActivity {
         cruiseEnabled = sp.getBoolean("cruise_enabled", true);
         normalLaneEnabled = sp.getBoolean("normal_navi_lane_enabled", false);
         avoidForegroundEnabled = sp.getBoolean("hide_on_amap_foreground", false);
-        autostartEnabled = sp.getBoolean("is_autostart_enabled", false);
  
         updateSeekBarToCurrentScale();
         
@@ -196,12 +188,6 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvAvoidForegroundStatus != null) {
             tvAvoidForegroundStatus.setText(avoidForegroundEnabled ? "高德前台时隐藏悬浮窗" : "前台正常显示浮窗");
-        }
-        if (cbAutostartEnabled != null) {
-            cbAutostartEnabled.setChecked(autostartEnabled);
-        }
-        if (tvAutostartStatus != null) {
-            tvAutostartStatus.setText(autostartEnabled ? "高德关联自启动已启用" : "高德关联自启动已禁用");
         }
 
         applyThemeToViews();
@@ -280,7 +266,6 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean("cruise_enabled", cruiseEnabled)
                 .putBoolean("normal_navi_lane_enabled", normalLaneEnabled)
                 .putBoolean("hide_on_amap_foreground", avoidForegroundEnabled)
-                .putBoolean("is_autostart_enabled", autostartEnabled)
                 .apply();
     }
 
@@ -381,7 +366,6 @@ public class MainActivity extends AppCompatActivity {
         updateSwitchTheme(cbCruiseEnabled, accentColor);
         updateSwitchTheme(cbNormalLaneEnabled, accentColor);
         updateSwitchTheme(cbAvoidForegroundEnabled, accentColor);
-        updateSwitchTheme(cbAutostartEnabled, accentColor);
 
         // 更新 SeekBar 与文本颜色
         sbScale.setProgressTintList(accentColorStateList);
@@ -494,22 +478,6 @@ public class MainActivity extends AppCompatActivity {
         cbAvoidForegroundEnabled.setOnCheckedChangeListener(avoidForegroundListener);
         if (cardAvoidForegroundToggle != null) {
             cardAvoidForegroundToggle.setOnClickListener(v -> cbAvoidForegroundEnabled.toggle());
-        }
-
-        cbAutostartEnabled.setChecked(autostartEnabled);
-        if (tvAutostartStatus != null) {
-            tvAutostartStatus.setText(autostartEnabled ? "高德关联自启动已启用" : "高德关联自启动已禁用");
-        }
-        CompoundButton.OnCheckedChangeListener autostartListener = (buttonView, isChecked) -> {
-            autostartEnabled = isChecked;
-            savePreferences();
-            if (tvAutostartStatus != null) {
-                tvAutostartStatus.setText(isChecked ? "高德关联自启动已启用" : "高德关联自启动已禁用");
-            }
-        };
-        cbAutostartEnabled.setOnCheckedChangeListener(autostartListener);
-        if (cardAutostartToggle != null) {
-            cardAutostartToggle.setOnClickListener(v -> cbAutostartEnabled.toggle());
         }
 
         sbScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
