@@ -4,10 +4,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -20,17 +16,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.cardview.widget.CardView;
+
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class FloatingWindowManager {
 
@@ -57,7 +47,7 @@ public class FloatingWindowManager {
     private int currentMode = MODE_CRUISE;
     private int styleMode = 0; // 0=normal, 1=minimal, 2=full
     // 各模式独立缩放: [0]=常规/常规巡航, [1]=灵动岛/灵动岛巡航, [2]=全数据
-    private float[] scales = {1.0f, 0.5f, 0.9f};
+    private float[] scales = {1.0f, 1.0f, 1.0f};
     private int themeColor = 0xFF4FC3F7;
     private boolean isShowing = false;
     private boolean hasActiveData = false; // 是否收到过实际导航/巡航广播数据
@@ -170,8 +160,8 @@ public class FloatingWindowManager {
         SharedPreferences sp = context.getSharedPreferences("floating_config", Context.MODE_PRIVATE);
         styleMode = sp.getInt("style_mode", sp.getBoolean("is_minimal_style", false) ? 1 : 0);
         scales[0] = sp.getFloat("scale_normal", 1.0f);
-        scales[1] = sp.getFloat("scale_minimal", 0.5f);
-        scales[2] = sp.getFloat("scale_full", 0.9f);
+        scales[1] = sp.getFloat("scale_minimal", 1.0f);
+        scales[2] = sp.getFloat("scale_full", 1.0f);
         themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
         savedPosX = sp.getInt("window_pos_x", -1);
         savedPosY = sp.getInt("window_pos_y", -1);
@@ -441,10 +431,10 @@ public class FloatingWindowManager {
         if (currentMode == MODE_NAVI) {
             if (styleMode == 2) layoutRes = R.layout.layout_floating_navi_full;
             else if (styleMode == 1) layoutRes = R.layout.layout_floating_navi_minimal;
-            else layoutRes = R.layout.layout_floating_navi;
+            else layoutRes = R.layout.layout_floating_navi_normal;
         } else {
             layoutRes = styleMode == 1
-                    ? R.layout.layout_floating_cruise
+                    ? R.layout.layout_floating_cruise_minimal
                     : R.layout.layout_floating_cruise_normal;
         }
 

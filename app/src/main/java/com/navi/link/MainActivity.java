@@ -659,16 +659,18 @@ public class MainActivity extends AppCompatActivity {
     private void updateSeekBarToCurrentScale() {
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         float s;
-        // 如果 manager 正在巡航，显示巡航缩放（=灵动岛的值）
+        String[] keys = {"scale_normal", "scale_minimal", "scale_full"};
+        float[] defaults = {1.0f, 1.0f, 1.0f};
+
         FloatingWindowManager manager = FloatingWindowManager.getInstance();
+        int idx;
         if (manager != null && manager.isActive() && manager.getCurrentMode() == FloatingWindowManager.MODE_CRUISE) {
-            s = sp.getFloat("scale_minimal", 0.5f); // 巡航复用灵动岛
+            idx = (styleMode == 1) ? 1 : 0; // 灵动岛巡航用1，常规巡航/全数据用0
         } else {
-            String[] keys = {"scale_normal", "scale_minimal", "scale_full"};
-            float[] defaults = {1.0f, 0.5f, 0.9f};
-            int idx = Math.max(0, Math.min(styleMode, 2));
-            s = sp.getFloat(keys[idx], defaults[idx]);
+            idx = Math.max(0, Math.min(styleMode, 2));
         }
+        s = sp.getFloat(keys[idx], defaults[idx]);
+
         sbScale.setProgress((int) (((s - 0.5f) / 1.5f) * 15));
         tvScaleValue.setText(String.format("%.1fx", s));
     }

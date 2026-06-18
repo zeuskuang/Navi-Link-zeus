@@ -1,18 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="#FF121212"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="20dp"
-        android:paddingTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:paddingTop="10dp">
 
         <!-- Title -->
         <TextView
@@ -89,16 +86,24 @@
                 app:tint="#FFFFFFFF" />
         </com.google.android.material.card.MaterialCardView>
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/tv_status"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
         <!-- Cards Container -->
         <LinearLayout
             android:id="@+id/ll_cards_container"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            app:layout_constraintTop_toBottomOf="@id/tv_status"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            android:paddingBottom="20dp">
 
             <!-- Card 1: 系统与服务 -->
             <com.google.android.material.card.MaterialCardView
@@ -802,7 +807,7 @@
                                 android:layout_weight="1">
 
                                 <TextView
-                                    android:text="常规车道线"
+                                    android:text="常规导航车道线"
                                     android:textSize="15sp"
                                     android:textColor="#FFFFFFFF"
                                     android:layout_width="match_parent"
@@ -892,5 +897,6 @@
 
         </LinearLayout>
 
+    </ScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView>
+</FrameLayout>

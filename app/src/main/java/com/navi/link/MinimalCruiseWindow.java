@@ -18,7 +18,6 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
     private TextView tvCruiseSpeed;
     private TextView tvCruiseRoadName;
     private LinearLayout llTrafficLightsContainer;
-    private View tvCruiseMargin;
 
     public MinimalCruiseWindow(Context context, View floatingView) {
         super(context, floatingView);
@@ -29,7 +28,6 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
         tvCruiseSpeed = floatingView.findViewById(R.id.tv_cruise_speed);
         tvCruiseRoadName = floatingView.findViewById(R.id.tv_cruise_road_name);
         llTrafficLightsContainer = floatingView.findViewById(R.id.ll_traffic_lights_container);
-        tvCruiseMargin = floatingView.findViewById(R.id.tv_margin);
     }
 
     @Override
@@ -69,9 +67,6 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
 
         if (count == 0) {
             container.setVisibility(View.GONE);
-            if (tvCruiseMargin != null) {
-                tvCruiseMargin.setVisibility(View.GONE);
-            }
             if (childCount > 0) container.removeAllViews();
             return;
         }
@@ -115,9 +110,6 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
             }
         }
         container.setVisibility(View.VISIBLE);
-        if (tvCruiseMargin != null) {
-            tvCruiseMargin.setVisibility(View.VISIBLE);
-        }
         
         boolean allGone = true;
         for (int i = 0; i < container.getChildCount(); i++) {
@@ -128,9 +120,6 @@ public class MinimalCruiseWindow extends BaseFloatingWindow {
         }
         if (allGone) {
             container.setVisibility(View.GONE);
-            if (tvCruiseMargin != null) {
-                tvCruiseMargin.setVisibility(View.GONE);
-            }
         }
     }
 

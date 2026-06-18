@@ -62,16 +62,10 @@
                 android:text="无名道路"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
+                android:paddingEnd="8dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@id/cruise_divider"
                 app:layout_constraintTop_toTopOf="parent" />
-            <TextView
-                android:id="@+id/tv_margin"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/tv_cruise_road_name"
-                app:layout_constraintTop_toTopOf="parent"
-                android:layout_width="10dp"
-                android:layout_height="match_parent"/>
             <!-- 巡航红绿灯容器 -->
             <LinearLayout
                 android:id="@+id/ll_traffic_lights_container"
@@ -81,7 +75,7 @@
                 android:orientation="horizontal"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/tv_margin"
+                app:layout_constraintStart_toEndOf="@id/tv_cruise_road_name"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

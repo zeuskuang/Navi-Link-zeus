@@ -10,7 +10,7 @@
 | 最低 SDK | Android 5.0 (API 21) |
 | 目标 SDK | Android 14 (API 34) |
 | 编译 SDK | 34 |
-| 版本 | 1.8 (versionCode 18) |
+| 版本 | 2.3 (versionCode 23) |
 | 开发语言 | Java |
 | 构建工具 | Gradle + AGP 8.5.0 |
 
@@ -27,20 +27,29 @@ Navi-Link/
 │   │   │   ├── MainActivity.java            # 主界面（配置页面）
 │   │   │   ├── AutoMapService.java          # 前台服务（维持悬浮窗生命周期）
 │   │   │   ├── AmapNaviReceiver.java        # 广播接收器（解析高德导航数据）
-│   │   │   ├── FloatingWindowManager.java   # 悬浮窗管理器（核心逻辑，1689行）
+│   │   │   ├── FloatingWindowManager.java   # 悬浮窗管理器（窗口调度 + 生命周期）
+│   │   │   ├── FloatingWindowFactory.java   # 窗口工厂（按模式+样式创建具体窗口）
+│   │   │   ├── BaseFloatingWindow.java      # 窗口抽象基类（公共方法 + 接口定义）
+│   │   │   ├── MinimalCruiseWindow.java     # 灵动岛巡航窗口实现
+│   │   │   ├── NormalCruiseWindow.java      # 常规巡航窗口实现
+│   │   │   ├── NormalNaviWindow.java        # 常规导航窗口实现
+│   │   │   ├── MinimalNaviWindow.java       # 灵动岛导航窗口实现
+│   │   │   ├── FullNaviWindow.java          # 全数据导航窗口实现
 │   │   │   ├── LaneLineView.java            # 车道线自定义组件
 │   │   │   ├── TmcProgressBar.java          # TMC路况进度条自定义组件
 │   │   │   └── CrashHandler.java            # 全局异常捕获处理器
 │   │   ├── res/
 │   │   │   ├── layout/
 │   │   │   │   ├── activity_main.xml                    # 主界面配置页
-│   │   │   │   ├── layout_floating_cruise.xml           # 巡航模式悬浮窗（灵动岛式）
+│   │   │   │   ├── layout_floating_cruise_minimal.xml           # 巡航模式悬浮窗（灵动岛式）
 │   │   │   │   ├── layout_floating_cruise_normal.xml    # 巡航模式悬浮窗（常规式）
-│   │   │   │   ├── layout_floating_navi.xml             # 常规导航悬浮窗
+│   │   │   │   ├── layout_floating_navi_normal.xml             # 常规导航悬浮窗
 │   │   │   │   ├── layout_floating_navi_full.xml        # 全数据导航悬浮窗
 │   │   │   │   ├── layout_floating_navi_minimal.xml     # 灵动岛导航悬浮窗
 │   │   │   │   ├── layout_floating_traffic_light_group.xml  # 红绿灯胶囊组件
-│   │   │   │   └── item_cruise_traffic_light.xml        # 巡航红绿灯单项
+│   │   │   │   ├── item_cruise_traffic_light.xml        # 巡航红绿灯单项
+│   │   │   │   ├── item_cruise_traffic_light_small.xml  # 巡航红绿灯小尺寸项
+│   │   │   │   └── item_app_list.xml                    # 应用列表项
 │   │   │   ├── drawable/
 │   │   │   │   ├── ic_notification.xml                 # 通知栏图标
 │   │   │   │   ├── ic_speed.xml                        # 速度图标
@@ -74,47 +83,41 @@ Navi-Link/
 | **只启动服务** | 有悬浮窗权限时，若服务未运行则静默启动服务 + Toast 提示；若已运行则仅提示。无权限时跳转配置页 |
 | **正常打开** | 直接进入 MainActivity 配置页 |
 
-### 2. 双模式悬浮窗
+### 2. 双模式五种窗口（工厂模式）
 
-| 模式 | 说明 | 触发条件 |
-|------|------|---------|
-| **巡航模式** (MODE_CRUISE) | 显示当前速度和道路名称，可附带多个红绿灯倒计时 | 无转向图标时默认进入 |
-| **导航模式** (MODE_NAVI) | 显示转弯指示、剩余距离、道路名、进度条、ETA、红绿灯胶囊 | 接收到转向图标(ICON≠0)时自动切换 |
+应用通过 `FloatingWindowFactory` 工厂模式创建具体窗口实现，`FloatingWindowManager` 仅负责调度和生命周期管理：
 
-巡航模式支持**两种布局样式**（在配置页选择）：
-| 巡航样式 | 说明 |
-|---------|------|
-| **灵动岛式** (layout_floating_cruise.xml) | 紧凑圆角胶囊，速度 + 道路名 + 红绿灯 |
-| **常规式** (layout_floating_cruise_normal.xml) | 矩形卡片，速度 + 限速 + 道路名 + 车道线 + 红绿灯 |
+| 模式 | 窗口类型 | 说明 |
+|------|---------|------|
+| **巡航模式** (MODE_CRUISE) | MinimalCruiseWindow | 灵动岛巡航：紧凑胶囊，速度 + 道路名 + 红绿灯 |
+| **巡航模式** (MODE_CRUISE) | NormalCruiseWindow | 常规巡航：矩形卡片，速度 + 限速 + 电子眼距离 + 道路名 + 车道线 + 红绿灯 |
+| **导航模式** (MODE_NAVI) | NormalNaviWindow | 常规导航：转向图标 + 距离 + 道路名 + TMC进度条 + ETA + 出口信息 + 红绿灯 |
+| **导航模式** (MODE_NAVI) | MinimalNaviWindow | 灵动岛导航：紧凑布局，速度 + 转向图标 + 距离 + 道路名 + 红绿灯 |
+| **导航模式** (MODE_NAVI) | FullNaviWindow | 全数据导航：完整驾驶信息 + 车道线 + TMC进度条 + 出口信息 + 红绿灯 |
 
-### 3. 三样式导航悬浮窗
+- **巡航模式**：无转向图标时默认进入，可在配置页选择灵动岛或常规样式
+- **导航模式**：接收到转向图标(ICON≠0)时自动切换，支持三种样式选择
 
-| 样式 | 说明 |
-|------|------|
-| **常规样式** | 大转向图标 + 距离数字 + 动作文字 + 道路名 + TMC路况进度条 + 底部摘要(剩余距离·时间) + ETA + 红绿灯胶囊 + 出口信息 |
-| **灵动岛样式**（精简） | 紧凑布局：当前速度 + 转向图标 + 剩余距离 + 道路名 + 红绿灯胶囊 |
-| **全数据样式** | 完整驾驶信息：转向图标 + 距离 + 道路名 + 进度条 + ETA + 当前速度 + 限速 + 电子眼距离/限速 + 终点名称 + 红绿灯总数/剩余 + 车道线 + TMC路况进度条 + 出口信息 + 红绿灯胶囊 |
-
-### 4. 红绿灯实时显示
+### 3. 红绿灯实时显示
 
 - **导航模式红绿灯**：显示单一路口红绿灯状态（红/黄/绿）+ 方向箭头 + 倒计时秒数，5秒无更新自动隐藏
 - **巡航模式红绿灯**：支持同时显示多个方向的红绿灯倒计时（JSONArray 批量数据），所有灯倒计时归零后自动隐藏容器
 
-### 5. TMC 路况进度条
+### 4. TMC 路况进度条
 
 通过 [TmcProgressBar](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/TmcProgressBar.java) 自定义 View 分段展示路况状态：
 - 7种状态颜色映射（已驶过灰/畅通绿/缓行黄/拥堵红/严重拥堵深红/蓝色/青蓝）
 - 当前位置三角标记图标指示
 - 缩放时物理缩放圆角保持视觉一致
 
-### 6. 车道线显示
+### 5. 车道线显示
 
 通过 [LaneLineView](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/LaneLineView.java) 自定义组件，解析高德 `KEY_TYPE=13012` 广播中的 `EXTRA_DRIVE_WAY` 数据，动态绘制车道线图标：
 - 3条及以下：wrap_content 紧凑模式，固定图标尺寸
 - 4条及以上：match_parent 均分模式，weight 等比分配宽度
 - 图标来自 `drawable/lane_pdf_*.png` 资源集合
 
-### 7. 背景模式与昼夜自适应
+### 6. 背景模式与昼夜自适应
 
 | 背景模式 | 说明 |
 |---------|------|
@@ -126,17 +129,17 @@ Navi-Link/
 - 应用启动时主动向高德查询当前昼夜状态（`KEY_TYPE=13030`）
 - 昼夜切换时自动调整文字颜色（深色→白色，浅色→深色）
 
-### 8. 巡航开关控制
+### 7. 巡航开关控制
 
 - 配置页提供巡航窗独立开关，可控制巡航模式是否显示
 - 仅影响巡航模式，导航模式不受影响
 - 关闭巡航后即使无转向图标也不显示巡航窗
 
-### 9. 出口信息显示
+### 8. 出口信息显示
 
 解析高德广播 `EXIT_NAME_INFO` 和 `EXIT_DIRECTION_INFO` 字段，在导航时显示出口编号和方向指示，便于快速识别高速/快速路出口。
 
-### 10. 个性化配置
+### 9. 个性化配置
 
 - **启动方式**：只启动服务 / 正常打开配置页
 - **主题色**：8种预设颜色可选（黑/蓝/浅蓝/橙/粉红/紫/深橙/青绿），自动计算文字对比度，启动方式卡片和样式卡片同步跟随
@@ -145,7 +148,7 @@ Navi-Link/
 - **拖拽定位**：悬浮窗可自由拖拽，长按 500ms 锁定/解锁位置
 - **配置持久化**：所有设置通过 `SharedPreferences` 保存
 
-### 11. 超时与看门狗机制
+### 10. 超时与看门狗机制
 
 | 机制 | 超时时间 | 效果 |
 |------|---------|------|
@@ -153,73 +156,98 @@ Navi-Link/
 | 巡航宽容 | 3秒 | 导航模式下短暂无转向图标时，给3秒宽容期 |
 | 看门狗 | 5秒 | 5秒内无任何数据则隐藏悬浮窗 |
 
-### 12. 缩放刷新数据缓存
+### 11. 缩放刷新数据缓存
 
 缩放调节触发 `recreateWindow()` 重建窗口时，自动读取上次缓存的最新导航数据填充到新布局中，避免窗口重建瞬间显示默认内容的闪烁。
 
-### 13. 全局异常捕获
+### 12. 全局异常捕获
 
 [CrashHandler](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/CrashHandler.java) 捕获所有未处理异常，保存设备信息、应用版本、异常堆栈到本地日志文件，自动清理旧日志保留最近10个。
 
 ---
 
-## 架构设计
+## 架构设计（工厂模式）
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                     RouterActivity                       │
-│               (透明分发器：权限/模式判断)                   │
-│            ┌──────────┴──────────┐                        │
-│            ▼                     ▼                        │
-│     启动服务模式            正常打开模式                    │
-│      │                     │                             │
-│      ▼                     ▼                             │
-│  AutoMapService        MainActivity                      │
-│  (前台Service)         (配置界面)                          │
-│      │                     │ 点击悬浮窗 →                 │
-│      ▼                     │                             │
-│  FloatingWindowManager ◄────┘                             │
-│  (悬浮窗单例管理器)                                        │
-│    │  │  │  │  │  │                                     │
-│    │  │  │  │  │  └── 昼夜/背景模式切换                    │
-│    │  │  │  │  └── 巡航开关控制                            │
-│    │  │  │  └── 出口信息显示                              │
-│    │  │  └── 物理缩放（文字/间距/圆角）                      │
-│    │  └── 数据缓存（重建无闪烁）                             │
-│    └── 模式切换/窗口重建                                   │
-│    ┌──────┬──────┬──────┬──────┐                         │
-│    ▼      ▼      ▼      ▼      ▼                         │
-│ 巡航窗  巡航窗  常规   灵动岛  全数据                        │
-│ (灵动岛)(常规) 导航窗  导航窗  导航窗                        │
-│    │      │      │      │      │                         │
-│    └──────┴──┬───┴──┬───┴──────┘                         │
-│              ▼      ▼                                    │
-│    LaneLineView   TmcProgressBar                         │
-│    (车道线)        (路况进度条)                            │
-│                                                          │
-│  AmapNaviReceiver                                        │
-│  (监听高德广播 AUTONAVI_STANDARD_BROADCAST_SEND)          │
-│    │                                                     │
-│    ├── KEY_TYPE=10001 (导航/巡航)                         │
-│    ├── KEY_TYPE=60073 (红绿灯)                            │
-│    ├── KEY_TYPE=10019 (昼夜模式)                          │
-│    ├── KEY_TYPE=13011 (TMC路况)                           │
-│    └── KEY_TYPE=13012 (车道线)                            │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                       RouterActivity                         │
+│                 (透明分发器：权限/模式判断)                     │
+│              ┌──────────┴──────────┐                          │
+│              ▼                     ▼                          │
+│       启动服务模式            正常打开模式                      │
+│        │                     │                               │
+│        ▼                     ▼                               │
+│    AutoMapService        MainActivity                        │
+│    (前台Service)         (配置界面)                            │
+│        │                     │ 点击悬浮窗 →                   │
+│        ▼                     │                               │
+│    FloatingWindowManager ◄────┘                               │
+│    (单例管理器：调度/生命周期/缓存/拖拽)                        │
+│      │                                                       │
+│      ├── FloatingWindowFactory.createWindow(mode, style)     │
+│      │         │                                             │
+│      │         ├── MinimalCruiseWindow  (灵动岛巡航)           │
+│      │         ├── NormalCruiseWindow   (常规巡航)             │
+│      │         ├── NormalNaviWindow     (常规导航)             │
+│      │         ├── MinimalNaviWindow    (灵动岛导航)           │
+│      │         └── FullNaviWindow       (全数据导航)           │
+│      │                                                       │
+│      └── activeWindow: BaseFloatingWindow                    │
+│            │                                                 │
+│            ├── updateNaviInfo()   / updateCruiseInfo()       │
+│            ├── updateTrafficLight() / updateCruiseTrafficLights() │
+│            ├── updateLaneLines()  / updateExitInfo()         │
+│            ├── updateTmcData()    / applyThemeColor()        │
+│            └── applyDayNightTextColors()                     │
+│                                                              │
+│    LaneLineView / TmcProgressBar  (窗口内嵌自定义组件)         │
+│                                                              │
+│    AmapNaviReceiver                                          │
+│    (监听高德广播 AUTONAVI_STANDARD_BROADCAST_SEND)            │
+│      │                                                       │
+│      ├── KEY_TYPE=10001 (导航/巡航)                           │
+│      ├── KEY_TYPE=60073 (红绿灯)                              │
+│      ├── KEY_TYPE=10019 (昼夜模式)                            │
+│      ├── KEY_TYPE=13011 (TMC路况)                             │
+│      └── KEY_TYPE=13012 (车道线)                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 工厂模式说明
+
+```
+FloatingWindowManager
+  │
+  │  recreateWindow() 时调用
+  ▼
+FloatingWindowFactory.createWindow(currentMode, styleMode, context, inflated)
+  │
+  ├── MODE_CRUISE + styleMode=1 → new MinimalCruiseWindow()
+  ├── MODE_CRUISE + styleMode=0 → new NormalCruiseWindow()
+  ├── MODE_NAVI   + styleMode=0 → new NormalNaviWindow()
+  ├── MODE_NAVI   + styleMode=1 → new MinimalNaviWindow()
+  └── MODE_NAVI   + styleMode=2 → new FullNaviWindow()
 ```
 
 ### 类职责说明
 
 | 类 | 行数 | 职责 |
 |----|------|------|
-| [RouterActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/RouterActivity.java) | 73 | 透明路由入口，根据启动方式配置分发到服务或配置页 |
-| [MainActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MainActivity.java) | 466 | 主界面，提供启动方式、悬浮窗样式、背景模式、缩放、主题色、巡航开关等全部配置 |
-| [AutoMapService](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AutoMapService.java) | 118 | 前台服务，创建通知栏常驻通知，初始化和销毁悬浮窗及广播接收器，主动查询昼夜模式 |
-| [AmapNaviReceiver](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AmapNaviReceiver.java) | 188 | 监听 `AUTONAVI_STANDARD_BROADCAST_SEND` 广播，解析5类KEY_TYPE数据 |
-| [FloatingWindowManager](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/FloatingWindowManager.java) | 1689 | 单例悬浮窗管理器，负责5种悬浮窗布局的创建/销毁/重建、模式切换、物理缩放、主题色、背景模式、昼夜切换、触摸拖拽、数据缓存恢复等全部悬浮窗逻辑 |
-| [LaneLineView](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/LaneLineView.java) | 219 | 车道线自定义组件，解析 `EXTRA_DRIVE_WAY` 数据动态渲染车道图标 |
-| [TmcProgressBar](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/TmcProgressBar.java) | 179 | TMC路况进度条自定义组件，分段彩色绘制 + 当前位置标记 |
-| [CrashHandler](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/CrashHandler.java) | 186 | 全局异常捕获，保存崩溃日志到本地，自动清理旧日志 |
+| [RouterActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/RouterActivity.java) | 102 | 透明路由入口，根据启动方式配置分发到服务或配置页 |
+| [MainActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MainActivity.java) | 704 | 主界面，提供启动方式、悬浮窗样式、背景模式、缩放、主题色、巡航开关、启动高德等全部配置 |
+| [AutoMapService](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AutoMapService.java) | 117 | 前台服务，创建通知栏常驻通知，初始化和销毁悬浮窗及广播接收器，主动查询昼夜模式 |
+| [AmapNaviReceiver](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AmapNaviReceiver.java) | 198 | 监听 `AUTONAVI_STANDARD_BROADCAST_SEND` 广播，解析5类KEY_TYPE数据 |
+| [FloatingWindowManager](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/FloatingWindowManager.java) | 1108 | 单例管理器，负责窗口调度、模式切换、物理缩放、数据缓存、拖拽/长按、超时管理等；具体窗口逻辑委托给 BaseFloatingWindow 子类 |
+| [FloatingWindowFactory](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/FloatingWindowFactory.java) | 26 | 工厂类，根据当前模式和样式创建对应的窗口实例 |
+| [BaseFloatingWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/BaseFloatingWindow.java) | 204 | 抽象基类，定义窗口公共接口（数据更新/主题/昼夜），提供工具方法（缩放/图标/颜色/格式化） |
+| [MinimalCruiseWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MinimalCruiseWindow.java) | 218 | 灵动岛巡航窗口：紧凑胶囊布局，速度 + 道路名 + 多红绿灯 |
+| [NormalCruiseWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/NormalCruiseWindow.java) | 256 | 常规巡航窗口：速度 + 限速 + 电子眼距离 + 道路名 + 车道线 + 多红绿灯 |
+| [NormalNaviWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/NormalNaviWindow.java) | 318 | 常规导航窗口：转向图标 + 距离 + 道路名 + TMC进度条 + ETA + 出口信息 + 红绿灯 |
+| [MinimalNaviWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MinimalNaviWindow.java) | 211 | 灵动岛导航窗口：紧凑布局，速度 + 转向 + 距离 + 道路名 + 红绿灯 |
+| [FullNaviWindow](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/FullNaviWindow.java) | 341 | 全数据导航窗口：完整驾驶信息 + 车道线 + TMC进度条 + 出口信息 + 红绿灯 |
+| [LaneLineView](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/LaneLineView.java) | 218 | 车道线自定义组件，解析 `EXTRA_DRIVE_WAY` 数据动态渲染车道图标 |
+| [TmcProgressBar](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/TmcProgressBar.java) | 178 | TMC路况进度条自定义组件，分段彩色绘制 + 当前位置标记 |
+| [CrashHandler](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/CrashHandler.java) | 185 | 全局异常捕获，保存崩溃日志到本地，自动清理旧日志 |
 
 ---
 
@@ -259,11 +287,13 @@ Navi-Link/
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 ```
 
 - **悬浮窗权限** (`SYSTEM_ALERT_WINDOW`)：必须手动授权，应用启动时会引导用户开启
 - **前台服务权限**：Android 14+ 需要 `FOREGROUND_SERVICE_SPECIAL_USE`
 - **通知权限** (`POST_NOTIFICATIONS`)：Android 13+ 前台服务必须显示通知
+- **包查询权限** (`QUERY_ALL_PACKAGES`)：Android 11+ 用于从配置页启动高德地图应用
 
 ### 依赖库
 
@@ -300,7 +330,7 @@ Navi-Link/
 
 APK 输出命名格式：`Navi-Link-v{versionName}-{buildType}-{yyyyMMddHHmm}.apk`
 
-例如：`Navi-Link-v1.8-release-202606110830.apk`
+例如：`Navi-Link-v2.3-release-202606110830.apk`
 
 ### 运行要求
 
@@ -320,31 +350,36 @@ APK 输出命名格式：`Navi-Link-v{versionName}-{buildType}-{yyyyMMddHHmm}.ap
   ▼
 AmapNaviReceiver.onReceive()
   │
-  ├─── KEY_TYPE=60073 ──→ FloatingWindowManager.updateTrafficLight()
-  │                       或 updateCruiseTrafficLights()
-  │                       └── 同时写入数据缓存
+  ├─── KEY_TYPE=60073 ──→ FloatingWindowManager
+  │                       └── activeWindow.updateTrafficLight()
+  │                           或 activeWindow.updateCruiseTrafficLights()
   │
-  ├─── KEY_TYPE=13011 ──→ FloatingWindowManager.updateTmcData()
-  │                       └── TmcProgressBar.updateTmcData()
+  ├─── KEY_TYPE=13011 ──→ FloatingWindowManager
+  │                       └── activeWindow.updateTmcData()
+  │                           └── TmcProgressBar.updateTmcData()
   │
-  ├─── KEY_TYPE=13012 ──→ FloatingWindowManager.updateLaneLines()
-  │                       └── LaneLineView.updateLanes()
+  ├─── KEY_TYPE=13012 ──→ FloatingWindowManager
+  │                       └── activeWindow.updateLaneLines()
+  │                           └── LaneLineView.updateLanes()
   │
   ├─── KEY_TYPE=10019 ──→ FloatingWindowManager.onDayNightChanged()
-  │                       └── 切换文字颜色主题
+  │                       └── activeWindow.applyDayNightTextColors()
   │
   └─── KEY_TYPE=10001 ──→ 判断 ICON 字段
                             │
-                            ├─ ICON≠0 → switchToNaviMode() → updateNaviInfo()
-                            │              ├── updateExitInfo()
-                            │              └── 写入数据缓存
-                            └─ ICON=0 → switchToCruiseMode() + updateCruiseInfo()
-                                           └── 写入数据缓存
+                            ├─ ICON≠0 → switchToNaviMode()
+                            │              ├── FloatingWindowFactory → 新窗口
+                            │              ├── activeWindow.updateNaviInfo()
+                            │              └── activeWindow.updateExitInfo()
+                            │
+                            └─ ICON=0 → switchToCruiseMode()
+                                           ├── FloatingWindowFactory → 新窗口
+                                           └── activeWindow.updateCruiseInfo()
 
 用户调节缩放 → recreateWindow()
   ├── 删除旧窗口
-  ├── 创建新布局 + 物理缩放
-  ├── bindViews()
+  ├── FloatingWindowFactory.createWindow() → 新窗口实例
+  ├── 物理缩放（scaleViewRecursive）
   ├── restoreCachedData()  ← 立即恢复最后一次数据，避免闪烁
   └── windowManager.addView() → 显示时已有真实数据
 ```
