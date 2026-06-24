@@ -10,7 +10,7 @@
 | 最低 SDK | Android 5.0 (API 21) |
 | 目标 SDK | Android 14 (API 34) |
 | 编译 SDK | 34 |
-| 版本 | 2.3 (versionCode 23) |
+| 版本 | 2.5.4 (versionCode 25) |
 | 开发语言 | Java |
 | 构建工具 | Gradle + AGP 8.5.0 |
 
@@ -164,6 +164,19 @@ Navi-Link/
 
 [CrashHandler](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/CrashHandler.java) 捕获所有未处理异常，保存设备信息、应用版本、异常堆栈到本地日志文件，自动清理旧日志保留最近10个。
 
+### 13. 关于我们与系统诊断页面
+
+在配置页新增“关于我们”独立页面，并支持全局主题色跟随与自适应：
+- **关于软件**：展示软件版本、作者（Shadow），并提供 **QQ交流群（1106923186）** 与 **Git开源地址**，支持一键点击复制至剪贴板，同时向用户声明本软件完全免费与相关免责条款。
+- **设备硬件诊断**：
+  - **处理器 (CPU)**：读取并解析 `/proc/cpuinfo`，展示 CPU 硬件型号、核心数及架构类型（如 `AArch64 (8核 / aarch64)`）。
+  - **运行内存 (RAM)**：调用 `ActivityManager.MemoryInfo` 动态计算并展示实时可用内存与物理内存总量。
+  - **存储空间 (ROM)**：使用 `StatFs` 获取设备数据存储的剩余与总容量。
+  - **系统版本 (API)**：动态展示 Android 系统版本及对应的 API 等级。
+  - **内核版本**：提取 `/proc/version` 中的 Linux 内核构建版本号。
+  - **安全补丁等级**：动态展示当前系统的安全补丁发布日期。
+- **主题色自适应**：左侧“关于我们”菜单的选中指示条、关于卡片的主标题以及其他设置面板中各个卡片的主标题（如常规布局设置、灵动布局设置、仪表盘副屏设置等）均会自动跟随用户选择的全局主题色。
+
 ---
 
 ## 架构设计（工厂模式）
@@ -234,7 +247,7 @@ FloatingWindowFactory.createWindow(currentMode, styleMode, context, inflated)
 | 类 | 行数 | 职责 |
 |----|------|------|
 | [RouterActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/RouterActivity.java) | 102 | 透明路由入口，根据启动方式配置分发到服务或配置页 |
-| [MainActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MainActivity.java) | 704 | 主界面，提供启动方式、悬浮窗样式、背景模式、缩放、主题色、巡航开关、启动高德等全部配置 |
+| [MainActivity](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/MainActivity.java) | 1653 | 主界面，提供启动方式、悬浮窗样式、背景模式、缩放、主题色、关于我们及设备信息系统诊断等全部配置 |
 | [AutoMapService](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AutoMapService.java) | 117 | 前台服务，创建通知栏常驻通知，初始化和销毁悬浮窗及广播接收器，主动查询昼夜模式 |
 | [AmapNaviReceiver](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/AmapNaviReceiver.java) | 198 | 监听 `AUTONAVI_STANDARD_BROADCAST_SEND` 广播，解析5类KEY_TYPE数据 |
 | [FloatingWindowManager](file:///d:/AndroidStudioProjects/Navi-Link/app/src/main/java/com/navi/link/FloatingWindowManager.java) | 1108 | 单例管理器，负责窗口调度、模式切换、物理缩放、数据缓存、拖拽/长按、超时管理等；具体窗口逻辑委托给 BaseFloatingWindow 子类 |
