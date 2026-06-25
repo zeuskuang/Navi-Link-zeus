@@ -16,3 +16,4 @@ local.properties
 /release
 app/release/
 /.idea/other.xml
+.agents/
