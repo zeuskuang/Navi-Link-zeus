@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTitleLayoutMinimal;
     private TextView tvTitleAboutSoftware;
     private TextView tvTitleAboutDevice;
+    private TextView tvTitleDisplayInfo;
     private SwitchCompat cbOverspeedWarningEnabled;
     private TextView tvOverspeedWarningStatus;
     private MaterialCardView cardOverspeedWarningToggle;
@@ -194,8 +195,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvAboutRamInfo;
     private TextView tvAboutRomInfo;
     private TextView tvAboutApiLevel;
-    private TextView tvAboutKernelVersion;
-    private TextView tvAboutSecurityPatch;
+    private TextView tvDisplayPhysicalRes;
+    private TextView tvDisplayAppRes;
+    private TextView tvDisplayDensity;
+    private TextView tvDisplayRefreshRate;
     private TextView tvAboutQqGroup;
     private TextView tvAboutGitUrl;
 
@@ -256,15 +259,15 @@ public class MainActivity extends AppCompatActivity {
     // ── 应用内更新 ──────────────────────────────────────────────
     private TextView tvVersionStatus;
 
-    /** 绑定"检查更新"入口卡片，展示当前版本，点击手动检查。 */
+    /** 绑定"软件版本"入口，点击手动检查更新。 */
     private void setupUpdateEntry() {
-        tvVersionStatus = findViewById(R.id.tv_version_status);
+        tvVersionStatus = tvAboutAppVersion;
         if (tvVersionStatus != null) {
-            tvVersionStatus.setText("当前版本 v" + BuildConfig.VERSION_NAME);
+            tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME);
         }
-        View card = findViewById(R.id.card_check_update);
-        if (card != null) {
-            card.setOnClickListener(v -> {
+        View versionRow = findViewById(R.id.ll_about_version);
+        if (versionRow != null) {
+            versionRow.setOnClickListener(v -> {
                 if (tvVersionStatus != null) tvVersionStatus.setText("正在检查更新…");
                 UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, true, updateCallback(true));
             });
@@ -278,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
             public void onUpdateAvailable(UpdateChecker.UpdateInfo info) {
                 if (isFinishing() || isDestroyed()) return;
                 if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("发现新版本 v" + info.versionName);
+                    tvVersionStatus.setText("有新版 v" + info.versionName);
                 }
                 UpdateDialog.show(MainActivity.this, BuildConfig.VERSION_NAME, info);
             }
@@ -286,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onNoUpdate(boolean manual) {
                 if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("当前版本 v" + BuildConfig.VERSION_NAME + "（已是最新）");
+                    tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME + " (已最新)");
                 }
                 if (manual) {
                     Toast.makeText(MainActivity.this, "已是最新版本", Toast.LENGTH_SHORT).show();
@@ -296,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(String message, boolean manual) {
                 if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("当前版本 v" + BuildConfig.VERSION_NAME);
+                    tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME);
                 }
                 if (manual) {
                     Toast.makeText(MainActivity.this, "检查更新失败：" + message, Toast.LENGTH_SHORT).show();
@@ -364,6 +367,7 @@ public class MainActivity extends AppCompatActivity {
         tvTitleLayoutMinimal = findViewById(R.id.tv_title_layout_minimal);
         tvTitleAboutSoftware = findViewById(R.id.tv_title_about_software);
         tvTitleAboutDevice = findViewById(R.id.tv_title_about_device);
+        tvTitleDisplayInfo = findViewById(R.id.tv_title_display_info);
         android.view.ViewGroup contentView = findViewById(android.R.id.content);
         View root = contentView.getChildAt(0);
         if (root != null) {
@@ -410,8 +414,10 @@ public class MainActivity extends AppCompatActivity {
         tvAboutRamInfo = findViewById(R.id.tv_about_ram_info);
         tvAboutRomInfo = findViewById(R.id.tv_about_rom_info);
         tvAboutApiLevel = findViewById(R.id.tv_about_api_level);
-        tvAboutKernelVersion = findViewById(R.id.tv_about_kernel_version);
-        tvAboutSecurityPatch = findViewById(R.id.tv_about_security_patch);
+        tvDisplayPhysicalRes = findViewById(R.id.tv_display_physical_res);
+        tvDisplayAppRes = findViewById(R.id.tv_display_app_res);
+        tvDisplayDensity = findViewById(R.id.tv_display_density);
+        tvDisplayRefreshRate = findViewById(R.id.tv_display_refresh_rate);
         tvAboutQqGroup = findViewById(R.id.tv_about_qq_group);
         tvAboutGitUrl = findViewById(R.id.tv_about_git_url);
 
@@ -881,6 +887,7 @@ public class MainActivity extends AppCompatActivity {
         if (tvTitleLayoutMinimal != null) tvTitleLayoutMinimal.setTextColor(accentColor);
         if (tvTitleAboutSoftware != null) tvTitleAboutSoftware.setTextColor(accentColor);
         if (tvTitleAboutDevice != null) tvTitleAboutDevice.setTextColor(accentColor);
+        if (tvTitleDisplayInfo != null) tvTitleDisplayInfo.setTextColor(accentColor);
 
         if (btnAdjustClusterPos != null) {
             btnAdjustClusterPos.setTextColor(accentColor);
@@ -1630,19 +1637,9 @@ public class MainActivity extends AppCompatActivity {
             tvAboutApiLevel.setText("Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
         }
 
-        // Kernel Version
-        if (tvAboutKernelVersion != null) {
-            tvAboutKernelVersion.setText(getAboutKernelVersion());
-        }
+        // Display Info
+        initDisplayInfo();
 
-        // Security Patch
-        if (tvAboutSecurityPatch != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                tvAboutSecurityPatch.setText(Build.VERSION.SECURITY_PATCH);
-            } else {
-                tvAboutSecurityPatch.setText("未知");
-            }
-        }
     }
 
     private String getAboutCpuInfo() {
@@ -1705,24 +1702,40 @@ public class MainActivity extends AppCompatActivity {
         return String.format(java.util.Locale.US, "%.1f MB", mb);
     }
 
-    private String getAboutKernelVersion() {
+    private void initDisplayInfo() {
         try {
-            java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader("/proc/version"), 256);
-            try {
-                String version = br.readLine();
-                if (version != null) {
-                    String[] parts = version.split("\\s+");
-                    if (parts.length > 2) {
-                        return parts[2];
-                    }
-                    return version;
+            android.view.WindowManager wm = (android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE);
+            if (wm != null) {
+                android.view.Display display = wm.getDefaultDisplay();
+                android.util.DisplayMetrics realMetrics = new android.util.DisplayMetrics();
+                android.util.DisplayMetrics appMetrics = new android.util.DisplayMetrics();
+                
+                display.getRealMetrics(realMetrics);
+                display.getMetrics(appMetrics);
+                
+                // 1. 物理分辨率
+                if (tvDisplayPhysicalRes != null) {
+                    tvDisplayPhysicalRes.setText(realMetrics.widthPixels + " × " + realMetrics.heightPixels);
                 }
-            } finally {
-                br.close();
+                
+                // 2. 应用分辨率
+                if (tvDisplayAppRes != null) {
+                    tvDisplayAppRes.setText(appMetrics.widthPixels + " × " + appMetrics.heightPixels);
+                }
+                
+                // 3. 屏幕密度
+                if (tvDisplayDensity != null) {
+                    tvDisplayDensity.setText(realMetrics.densityDpi + " dpi (" + String.format(java.util.Locale.US, "%.2f", realMetrics.density) + ")");
+                }
+                
+                // 4. 刷新率
+                if (tvDisplayRefreshRate != null) {
+                    float refreshRate = display.getRefreshRate();
+                    tvDisplayRefreshRate.setText(String.format(java.util.Locale.US, "%.0f Hz", refreshRate));
+                }
             }
         } catch (Exception e) {
-            // fallback
+            e.printStackTrace();
         }
-        return System.getProperty("os.version", "未知");
     }
 }

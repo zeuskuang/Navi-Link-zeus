@@ -57,10 +57,10 @@ node --use-system-ca server.js
 | `app/.../UpdateChecker.java` | 请求自有服务 `/api/latest`，比对版本（语义化数字比较），后台线程执行 |
 | `app/.../UpdateDialog.java` | 渲染深色风格更新弹窗，处理下载跳转 |
 | `app/.../res/layout/dialog_update.xml` | 弹窗布局 |
-| `MainActivity` | 启动时静默检查；设置页底部「检查更新」入口可手动检查 |
+| `MainActivity` | 启动时静默检查；「关于我们」中的「软件版本」入口可手动检查 |
 
 - **静默检查**：App 启动时自动检查，仅在有新版本时弹窗，不打扰用户。
-- **手动检查**：设置页底部「检查更新」卡片，点击后即使已是最新也会 Toast 提示。
+- **手动检查**：「关于软件」->「软件版本」行，点击后即使已是最新也会 Toast 提示。
 - 服务地址通过 `BuildConfig.UPDATE_BASE_URL` 配置（默认 `https://navi-link.zuoqirun.top`），
   在 `app/build.gradle` 中修改，或用 gradle 属性 / 环境变量 `NAVI_UPDATE_BASE_URL` 覆盖。
   该地址**不在任何界面显示**。
