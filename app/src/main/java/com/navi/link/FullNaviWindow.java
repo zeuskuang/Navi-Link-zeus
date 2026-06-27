@@ -25,10 +25,7 @@ public class FullNaviWindow extends BaseFloatingWindow {
     private TextView tvFullLightCount;
     private CardView cvFullMiddle;
 
-    private View llTrafficLightGroupFull;
-    private ImageView ivLightIconFull;
-    private ImageView ivLightArrowFull;
-    private TextView tvLightTimeFull;
+    private TrafficLightView llTrafficLightGroupFull;
 
     private ImageView ivActionIconFull;
     private TextView tvFullLabelCurrent;
@@ -62,11 +59,6 @@ public class FullNaviWindow extends BaseFloatingWindow {
         cvFullMiddle = floatingView.findViewById(R.id.cv_full_middle);
 
         llTrafficLightGroupFull = floatingView.findViewById(R.id.ll_traffic_light_group);
-        if (llTrafficLightGroupFull != null) {
-            ivLightIconFull = llTrafficLightGroupFull.findViewById(R.id.iv_light_icon);
-            ivLightArrowFull = llTrafficLightGroupFull.findViewById(R.id.iv_light_arrow);
-            tvLightTimeFull = llTrafficLightGroupFull.findViewById(R.id.tv_light_time);
-        }
 
         ivActionIconFull = floatingView.findViewById(R.id.iv_action_icon_full);
         tvFullLabelCurrent = floatingView.findViewById(R.id.tv_full_label_current);
@@ -224,47 +216,11 @@ public class FullNaviWindow extends BaseFloatingWindow {
     public void updateTrafficLight(int status, int dir, int countdown) {
         if (llTrafficLightGroupFull == null) return;
         if (countdown <= 0) {
-            llTrafficLightGroupFull.setVisibility(View.GONE);
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupFull.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupFull.setTag(null);
-            }
-            llTrafficLightGroupFull.setAlpha(1f);
+            llTrafficLightGroupFull.clear();
             return;
         }
         llTrafficLightGroupFull.setVisibility(View.VISIBLE);
-        if (ivLightIconFull != null) {
-            ivLightIconFull.setImageResource(getNaviLightIconRes(status));
-        }
-        if (ivLightArrowFull != null) {
-            ivLightArrowFull.setImageResource(getNaviLightDirRes(dir));
-        }
-        if (tvLightTimeFull != null) {
-            tvLightTimeFull.setText(String.valueOf(countdown));
-        }
-
-        // 应用红绿灯填充背景样式
-        applyTrafficLightStyle(llTrafficLightGroupFull, ivLightIconFull, status, true);
-
-        if (countdown <= 5) {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupFull.getTag();
-            if (animator == null) {
-                ObjectAnimator newAnimator = ObjectAnimator.ofFloat(llTrafficLightGroupFull, "alpha", 1f, 0.3f);
-                newAnimator.setDuration(500);
-                newAnimator.setRepeatCount(ValueAnimator.INFINITE);
-                newAnimator.setRepeatMode(ValueAnimator.REVERSE);
-                newAnimator.start();
-                llTrafficLightGroupFull.setTag(newAnimator);
-            }
-        } else {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupFull.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupFull.setTag(null);
-            }
-            llTrafficLightGroupFull.setAlpha(1f);
-        }
+        llTrafficLightGroupFull.setData(status, dir, countdown, true);
     }
 
     @Override
@@ -375,14 +331,6 @@ public class FullNaviWindow extends BaseFloatingWindow {
                 tvFullSpeed.setTag(null);
             }
             tvFullSpeed.setAlpha(1f);
-        }
-        if (llTrafficLightGroupFull != null) {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupFull.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupFull.setTag(null);
-            }
-            llTrafficLightGroupFull.setAlpha(1f);
         }
         if (ivActionIconFull != null) {
             ObjectAnimator animator = (ObjectAnimator) ivActionIconFull.getTag();

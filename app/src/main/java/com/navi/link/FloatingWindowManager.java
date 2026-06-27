@@ -141,8 +141,12 @@ public class FloatingWindowManager {
     private String cachedExitDirection = "";
     private String cachedSapaName = "";
     private String cachedSapaDist = "";
+    private int cachedSapaType = 0;
     private String cachedNextSapaName = "";
     private String cachedNextSapaDist = "";
+    private int cachedNextSapaType = 0;
+
+    private int cachedCrossMap = 0;
 
     // Runnable
     private final Runnable naviSwitchRunnable = this::doNaviSwitch;
@@ -349,8 +353,12 @@ public class FloatingWindowManager {
         cachedExitDirection = "";
         cachedSapaName = "";
         cachedSapaDist = "";
+        cachedSapaType = 0;
         cachedNextSapaName = "";
         cachedNextSapaDist = "";
+        cachedNextSapaType = 0;
+
+        cachedCrossMap = 0;
 
         hasActiveData = false;
         currentMode = MODE_CRUISE;
@@ -650,7 +658,7 @@ public class FloatingWindowManager {
                 activeWindow.updateExitInfo(cachedExitName, cachedExitDirection);
             }
             if (cachedSapaName != null && !cachedSapaName.isEmpty()) {
-                activeWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedNextSapaName, cachedNextSapaDist);
+                activeWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
             }
             if (cachedLightCountdown > 0) {
                 activeWindow.updateTrafficLight(cachedLightStatus, cachedLightDir, cachedLightCountdown);
@@ -918,11 +926,13 @@ public class FloatingWindowManager {
     public void updateFloatingWindowVisibility() {
         SharedPreferences sp = context.getSharedPreferences("floating_config", Context.MODE_PRIVATE);
         boolean hideOnForeground = sp.getBoolean("hide_on_amap_foreground", false);
+        boolean hideOnCrossMap = sp.getBoolean("hide_on_cross_map", false);
         boolean hideMainWhenClusterActive = sp.getBoolean("hide_main_when_cluster_active", false);
 
         boolean isClusterActive = isClusterMirrorEnabled && clusterFloatingView != null;
         boolean shouldHideMain = (hideOnForeground && isAmapForeground)
-                || (hideMainWhenClusterActive && isClusterActive);
+                || (hideMainWhenClusterActive && isClusterActive)
+                || (hideOnCrossMap && cachedCrossMap == 1 && currentMode == MODE_NAVI);
 
         if (floatingView != null) {
             if (shouldHideMain) {
@@ -1186,18 +1196,29 @@ public class FloatingWindowManager {
         }
     }
 
-    public void updateSapaInfo(String sapaName, String sapaDist, String nextSapaName, String nextSapaDist) {
+    public void updateSapaInfo(String sapaName, String sapaDist, int sapaType, String nextSapaName, String nextSapaDist, int nextSapaType) {
         cachedSapaName = sapaName != null ? sapaName.trim() : "";
         cachedSapaDist = sapaDist != null ? sapaDist.trim() : "";
+        cachedSapaType = sapaType;
         cachedNextSapaName = nextSapaName != null ? nextSapaName.trim() : "";
         cachedNextSapaDist = nextSapaDist != null ? nextSapaDist.trim() : "";
+        cachedNextSapaType = nextSapaType;
         if (!isShowing || currentMode != MODE_NAVI) return;
         if (activeWindow != null && floatingView != null) {
-            activeWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedNextSapaName, cachedNextSapaDist);
+            activeWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
         }
         if (clusterActiveWindow != null && clusterFloatingView != null) {
-            clusterActiveWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedNextSapaName, cachedNextSapaDist);
+            clusterActiveWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
         }
+    }
+
+    /**
+     * 更新路口放大图状态（高德 10019 广播 EXTRA_CROSS_MAP）
+     */
+    public void updateCrossMapStatus(int hasCrossMap) {
+        if (cachedCrossMap == hasCrossMap) return;
+        cachedCrossMap = hasCrossMap;
+        updateFloatingWindowVisibility();
     }
 
     // ======================== 红绿灯更新 ========================
@@ -1585,7 +1606,7 @@ public class FloatingWindowManager {
                 clusterActiveWindow.updateExitInfo(cachedExitName, cachedExitDirection);
             }
             if (cachedSapaName != null && !cachedSapaName.isEmpty()) {
-                clusterActiveWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedNextSapaName, cachedNextSapaDist);
+                clusterActiveWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
             }
             if (cachedLightStatus != -1) {
                 clusterActiveWindow.updateTrafficLight(cachedLightStatus, cachedLightDir, cachedLightCountdown);

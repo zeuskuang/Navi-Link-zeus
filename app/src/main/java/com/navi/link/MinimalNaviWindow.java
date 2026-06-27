@@ -20,10 +20,7 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     private TextView tvMinLightCount;
     private View minDividerMin;
 
-    private View llTrafficLightGroupMin;
-    private ImageView ivLightIconMin;
-    private ImageView ivLightArrowMin;
-    private TextView tvLightTimeMin;
+    private TrafficLightView llTrafficLightGroupMin;
 
     private CameraWarningView llMinNaviCameraGroup;
 
@@ -53,11 +50,6 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
         minDividerMin = floatingView.findViewById(R.id.min_divider);
 
         llTrafficLightGroupMin = floatingView.findViewById(R.id.ll_traffic_light_group);
-        if (llTrafficLightGroupMin != null) {
-            ivLightIconMin = llTrafficLightGroupMin.findViewById(R.id.iv_light_icon);
-            ivLightArrowMin = llTrafficLightGroupMin.findViewById(R.id.iv_light_arrow);
-            tvLightTimeMin = llTrafficLightGroupMin.findViewById(R.id.tv_light_time);
-        }
 
         llMinNaviCameraGroup = floatingView.findViewById(R.id.ll_min_navi_camera_group);
 
@@ -189,51 +181,13 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     @Override
     public void updateTrafficLight(int status, int dir, int countdown) {
         mTrafficLightCountdown = countdown;
-        if (llTrafficLightGroupMin == null) {
-            return;
-        }
+        if (llTrafficLightGroupMin == null) return;
         if (countdown <= 0) {
-            llTrafficLightGroupMin.setVisibility(View.GONE);
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupMin.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupMin.setTag(null);
-            }
-            llTrafficLightGroupMin.setAlpha(1f);
+            llTrafficLightGroupMin.clear();
             return;
         }
         llTrafficLightGroupMin.setVisibility(View.VISIBLE);
-        if (ivLightIconMin != null) {
-            ivLightIconMin.setImageResource(getNaviLightIconRes(status));
-        }
-        if (ivLightArrowMin != null) {
-            ivLightArrowMin.setImageResource(getNaviLightDirRes(dir));
-        }
-        if (tvLightTimeMin != null) {
-            tvLightTimeMin.setText(String.valueOf(countdown));
-        }
-
-        // 应用红绿灯填充背景样式
-        applyTrafficLightStyle(llTrafficLightGroupMin, ivLightIconMin, status, true);
-
-        if (countdown <= 5) {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupMin.getTag();
-            if (animator == null) {
-                ObjectAnimator newAnimator = ObjectAnimator.ofFloat(llTrafficLightGroupMin, "alpha", 1f, 0.3f);
-                newAnimator.setDuration(500);
-                newAnimator.setRepeatCount(ValueAnimator.INFINITE);
-                newAnimator.setRepeatMode(ValueAnimator.REVERSE);
-                newAnimator.start();
-                llTrafficLightGroupMin.setTag(newAnimator);
-            }
-        } else {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupMin.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupMin.setTag(null);
-            }
-            llTrafficLightGroupMin.setAlpha(1f);
-        }
+        llTrafficLightGroupMin.setData(status, dir, countdown, true);
     }
 
     private void updateCameraDistVisibility() {
@@ -335,14 +289,6 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (llTrafficLightGroupMin != null) {
-            ObjectAnimator animator = (ObjectAnimator) llTrafficLightGroupMin.getTag();
-            if (animator != null) {
-                animator.cancel();
-                llTrafficLightGroupMin.setTag(null);
-            }
-            llTrafficLightGroupMin.setAlpha(1f);
-        }
         if (tvMinSpeed != null) {
             ObjectAnimator animator = (ObjectAnimator) tvMinSpeed.getTag();
             if (animator != null) {

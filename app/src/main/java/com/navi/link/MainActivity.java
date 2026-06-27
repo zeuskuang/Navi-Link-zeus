@@ -102,6 +102,11 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbAvoidForegroundEnabled;
     private TextView tvAvoidForegroundStatus;
     private MaterialCardView cardAvoidForegroundToggle;
+
+    private boolean crossMapHideEnabled = false;
+    private SwitchCompat cbCrossMapHideEnabled;
+    private TextView tvCrossMapHideStatus;
+    private MaterialCardView cardCrossMapHideToggle;
     private TextView tvSys;
     private TextView tvStyle;
     private TextView tvOperation;
@@ -349,6 +354,10 @@ public class MainActivity extends AppCompatActivity {
         cbAvoidForegroundEnabled = findViewById(R.id.cb_avoid_foreground_enabled);
         tvAvoidForegroundStatus = findViewById(R.id.tv_avoid_foreground_status);
         cardAvoidForegroundToggle = findViewById(R.id.card_avoid_foreground_toggle);
+
+        cbCrossMapHideEnabled = findViewById(R.id.cb_cross_map_hide_enabled);
+        tvCrossMapHideStatus = findViewById(R.id.tv_cross_map_hide_status);
+        cardCrossMapHideToggle = findViewById(R.id.card_cross_map_hide_toggle);
         cbOverspeedWarningEnabled = findViewById(R.id.cb_overspeed_warning_enabled);
         tvOverspeedWarningStatus = findViewById(R.id.tv_overspeed_warning_status);
         cardOverspeedWarningToggle = findViewById(R.id.card_overspeed_warning_toggle);
@@ -503,6 +512,7 @@ public class MainActivity extends AppCompatActivity {
         normalBottomInfoEnabled = sp.getBoolean("normal_navi_bottom_info_enabled", true);
         minimalLaneEnabled = sp.getBoolean("minimal_navi_lane_enabled", false);
         isTrafficLightFillEnabled = sp.getBoolean("traffic_light_fill_enabled", false);
+        crossMapHideEnabled = sp.getBoolean("hide_on_cross_map", false);
  
         updateSeekBarToCurrentScale();
         
@@ -517,6 +527,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvAvoidForegroundStatus != null) {
             tvAvoidForegroundStatus.setText(avoidForegroundEnabled ? "高德前台时隐藏悬浮窗" : "前台正常显示浮窗");
+        }
+        if (cbCrossMapHideEnabled != null) {
+            cbCrossMapHideEnabled.setChecked(crossMapHideEnabled);
+        }
+        if (tvCrossMapHideStatus != null) {
+            tvCrossMapHideStatus.setText(crossMapHideEnabled ? "路口放大图时隐藏悬浮窗" : "路口放大图时正常显示浮窗");
         }
         if (cbOverspeedWarningEnabled != null) {
             cbOverspeedWarningEnabled.setChecked(overspeedWarningEnabled);
@@ -776,6 +792,7 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean("cruise_enabled", cruiseEnabled)
                 .putBoolean("normal_navi_lane_enabled", normalLaneEnabled)
                 .putBoolean("hide_on_amap_foreground", avoidForegroundEnabled)
+                .putBoolean("hide_on_cross_map", crossMapHideEnabled)
                 .putBoolean("overspeed_warning_enabled", overspeedWarningEnabled)
                 .putBoolean("cluster_mirror_enabled", clusterMirrorEnabled)
                 .putInt("cluster_display_id", clusterDisplayId)
@@ -886,6 +903,7 @@ public class MainActivity extends AppCompatActivity {
         updateSwitchTheme(cbCruiseEnabled, accentColor);
         updateSwitchTheme(cbNormalLaneEnabled, accentColor);
         updateSwitchTheme(cbAvoidForegroundEnabled, accentColor);
+        updateSwitchTheme(cbCrossMapHideEnabled, accentColor);
         updateSwitchTheme(cbOverspeedWarningEnabled, accentColor);
         updateSwitchTheme(cbMinimalCameraEnabled, accentColor);
         updateSwitchTheme(cbMinimalAutocenterEnabled, accentColor);
@@ -1065,6 +1083,27 @@ public class MainActivity extends AppCompatActivity {
         cbAvoidForegroundEnabled.setOnCheckedChangeListener(avoidForegroundListener);
         if (cardAvoidForegroundToggle != null) {
             cardAvoidForegroundToggle.setOnClickListener(v -> cbAvoidForegroundEnabled.toggle());
+        }
+
+        cbCrossMapHideEnabled.setChecked(crossMapHideEnabled);
+        if (tvCrossMapHideStatus != null) {
+            tvCrossMapHideStatus.setText(crossMapHideEnabled ? "路口放大图时隐藏悬浮窗" : "路口放大图时正常显示浮窗");
+        }
+        CompoundButton.OnCheckedChangeListener crossMapHideListener = (buttonView, isChecked) -> {
+            crossMapHideEnabled = isChecked;
+            savePreferences();
+            if (tvCrossMapHideStatus != null) {
+                tvCrossMapHideStatus.setText(isChecked ? "路口放大图时隐藏悬浮窗" : "路口放大图时正常显示浮窗");
+            }
+            // 立即更新悬浮窗可见性
+            FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+            if (fwm != null) {
+                fwm.updateFloatingWindowVisibility();
+            }
+        };
+        cbCrossMapHideEnabled.setOnCheckedChangeListener(crossMapHideListener);
+        if (cardCrossMapHideToggle != null) {
+            cardCrossMapHideToggle.setOnClickListener(v -> cbCrossMapHideEnabled.toggle());
         }
 
         cbOverspeedWarningEnabled.setChecked(overspeedWarningEnabled);
