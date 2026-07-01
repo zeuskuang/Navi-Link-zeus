@@ -28,8 +28,8 @@ import java.util.Comparator;
 public class LaneLineView extends LinearLayout {
 
     private static final String TAG = "LaneLineView";
-    private static final int LANE_ICON_BASE_DP = 44;
-    private static final int LANE_MARGIN_DP = 1;
+    private static final int LANE_ICON_BASE_DP = 50;
+    private static final int LANE_MARGIN_DP = 0;
     private static final int DIVIDER_WIDTH_DP = 1;
     private static final int DIVIDER_HEIGHT_DP = 34;
 
@@ -41,14 +41,10 @@ public class LaneLineView extends LinearLayout {
         this.isSimpleMode = simpleMode;
         if (simpleMode) {
             setBackgroundResource(R.drawable.bg_mini_capsule);
-            int paddingH = dpToPx(0);
-            int paddingV = dpToPx(0);
-            setPadding(paddingH, paddingV, paddingH, paddingV);
+            setPadding(0, 0, 0, 0);
         } else {
             setBackgroundResource(R.drawable.bg_lane_line);
-            int paddingH = dpToPx(0);
-            int paddingV = dpToPx(2);
-            setPadding(paddingH, paddingV, paddingH, paddingV);
+            setPadding(0, 0, 0, 0);
         }
     }
 
@@ -71,9 +67,7 @@ public class LaneLineView extends LinearLayout {
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER);
         setBackgroundResource(R.drawable.bg_lane_line);
-        int paddingH = dpToPx(0);
-        int paddingV = dpToPx(2);
-        setPadding(paddingH, paddingV, paddingH, paddingV);
+        setPadding(0, 0, 0, 0);
     }
 
     /**

@@ -13,10 +13,10 @@ import org.json.JSONObject;
 
 public class FullCruiseWindow extends BaseFloatingWindow {
 
+    private TextView tvFullCruiseLabel;
     private TextView tvFullCruiseSpeed;
     private TextView tvFullCruiseUnit;
     private TextView tvFullCruiseRoadName;
-    private TextView tvFullCruiseDirection;
     private LinearLayout llFullCruiseTrafficLights;
     private LaneLineView laneLineViewFullCruise;
     private CameraWarningView llFullCruiseCamera;
@@ -30,10 +30,10 @@ public class FullCruiseWindow extends BaseFloatingWindow {
 
     @Override
     protected void initViews() {
+        tvFullCruiseLabel = floatingView.findViewById(R.id.tv_full_cruise_label);
         tvFullCruiseSpeed = floatingView.findViewById(R.id.tv_full_cruise_speed);
         tvFullCruiseUnit = floatingView.findViewById(R.id.tv_full_cruise_unit);
         tvFullCruiseRoadName = floatingView.findViewById(R.id.tv_full_cruise_road_name);
-        tvFullCruiseDirection = floatingView.findViewById(R.id.tv_full_cruise_direction);
         llFullCruiseTrafficLights = floatingView.findViewById(R.id.ll_full_cruise_traffic_lights);
         laneLineViewFullCruise = floatingView.findViewById(R.id.lane_line_view_full_cruise);
         llFullCruiseCamera = floatingView.findViewById(R.id.ll_full_cruise_camera);
@@ -92,18 +92,6 @@ public class FullCruiseWindow extends BaseFloatingWindow {
             tvFullCruiseRoadName.setText(roadName);
         }
         updateCameraInfo(cameraType, cameraSpeed, cameraDist);
-        updateDirection(carDirection);
-    }
-
-    private void updateDirection(int carDirection) {
-        if (tvFullCruiseDirection != null) {
-            if (carDirection >= 0) {
-                tvFullCruiseDirection.setText("朝向 " + getDirectionText(carDirection));
-                tvFullCruiseDirection.setVisibility(View.VISIBLE);
-            } else {
-                tvFullCruiseDirection.setVisibility(View.GONE);
-            }
-        }
     }
 
     private void updateCameraInfo(int cameraType, int cameraSpeed, int cameraDist) {
@@ -229,14 +217,14 @@ public class FullCruiseWindow extends BaseFloatingWindow {
 
         if (tvFullCruiseRoadName != null) tvFullCruiseRoadName.setTextColor(textPrimary);
         if (tvFullCruiseUnit != null) tvFullCruiseUnit.setTextColor(isNightMode ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT);
-        if (tvFullCruiseDirection != null) tvFullCruiseDirection.setTextColor(isNightMode ? TEXT_HINT_DARK : TEXT_HINT_LIGHT);
+        if (tvFullCruiseLabel != null) tvFullCruiseLabel.setTextColor(isNightMode ? TEXT_HINT_DARK : TEXT_HINT_LIGHT);
     }
 
     @Override
     public void resetToDefaultTextColors() {
         if (tvFullCruiseRoadName != null) tvFullCruiseRoadName.setTextColor(TEXT_PRIMARY_DARK);
         if (tvFullCruiseUnit != null) tvFullCruiseUnit.setTextColor(TEXT_SECONDARY_DARK);
-        if (tvFullCruiseDirection != null) tvFullCruiseDirection.setTextColor(TEXT_HINT_DARK);
+        if (tvFullCruiseLabel != null) tvFullCruiseLabel.setTextColor(TEXT_HINT_DARK);
     }
 
     @Override

@@ -18,6 +18,7 @@ public class NormalCruiseWindow extends BaseFloatingWindow {
     private LinearLayout llCnTrafficLightsContainer;
     private LaneLineView laneLineView;
     private CameraWarningView llCnCameraDist;
+    private View llCruiseNormalFirstRow;
 
     private boolean isOverspeedBlinking = false;
     private int themeColor = Color.BLACK;
@@ -33,6 +34,7 @@ public class NormalCruiseWindow extends BaseFloatingWindow {
         llCnTrafficLightsContainer = floatingView.findViewById(R.id.ll_cn_traffic_lights_container);
         laneLineView = floatingView.findViewById(R.id.lane_line_view);
         llCnCameraDist = floatingView.findViewById(R.id.ll_cn_camera_dist);
+        llCruiseNormalFirstRow = floatingView.findViewById(R.id.ll_cruise_normal_first_row);
     }
 
     @Override
@@ -49,6 +51,11 @@ public class NormalCruiseWindow extends BaseFloatingWindow {
 
     @Override
     public void updateCruiseInfo(int speed, String roadName, int cameraType, int cameraSpeed, int cameraDist, int carDirection) {
+        // 控制第一排文字信息显示隐藏
+        boolean showInfo = sp.getBoolean("normal_cruise_info_enabled", true);
+        if (llCruiseNormalFirstRow != null) {
+            llCruiseNormalFirstRow.setVisibility(showInfo ? View.VISIBLE : View.GONE);
+        }
         if (tvCnSpeed != null) {
             tvCnSpeed.setText(String.valueOf(speed));
             // 超速警告：限速>0 且 当前速度>限速 → 红色+闪烁 (受 overspeed_warning_enabled 开关控制)

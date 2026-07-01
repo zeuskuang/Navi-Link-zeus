@@ -144,6 +144,10 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbNormalBottomInfoEnabled;
     private TextView tvNormalBottomInfoStatus;
 
+    private MaterialCardView cardNormalCruiseInfoToggle;
+    private SwitchCompat cbNormalCruiseInfoEnabled;
+    private TextView tvNormalCruiseInfoStatus;
+
     private MaterialCardView cardMinimalLaneToggle;
     private SwitchCompat cbMinimalLaneEnabled;
     private TextView tvMinimalLaneStatus;
@@ -241,6 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean normalTmcEnabled = true;
     private boolean normalBottomInfoEnabled = true;
+    private boolean normalCruiseInfoEnabled = true;
     private boolean minimalLaneEnabled = false;
 
     private boolean isMinimalCameraEnabled = false;
@@ -263,7 +268,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            EdgeToEdge.enable(this);
+        }
         setContentView(R.layout.activity_main);
         initViews();
         loadPreferences();
@@ -461,6 +468,10 @@ public class MainActivity extends AppCompatActivity {
         cbNormalBottomInfoEnabled = findViewById(R.id.cb_normal_bottom_info_enabled);
         tvNormalBottomInfoStatus = findViewById(R.id.tv_normal_bottom_info_status);
 
+        cardNormalCruiseInfoToggle = findViewById(R.id.card_normal_cruise_info_toggle);
+        cbNormalCruiseInfoEnabled = findViewById(R.id.cb_normal_cruise_info_enabled);
+        tvNormalCruiseInfoStatus = findViewById(R.id.tv_normal_cruise_info_status);
+
         cardMinimalLaneToggle = findViewById(R.id.card_minimal_lane_toggle);
         cbMinimalLaneEnabled = findViewById(R.id.cb_minimal_lane_enabled);
         tvMinimalLaneStatus = findViewById(R.id.tv_minimal_lane_status);
@@ -522,6 +533,7 @@ public class MainActivity extends AppCompatActivity {
         autoStartEnabled = sp.getBoolean("auto_start", false);
         normalTmcEnabled = sp.getBoolean("normal_navi_tmc_enabled", true);
         normalBottomInfoEnabled = sp.getBoolean("normal_navi_bottom_info_enabled", true);
+        normalCruiseInfoEnabled = sp.getBoolean("normal_cruise_info_enabled", true);
         minimalLaneEnabled = sp.getBoolean("minimal_navi_lane_enabled", false);
         isTrafficLightFillEnabled = sp.getBoolean("traffic_light_fill_enabled", false);
         crossMapHideEnabled = sp.getBoolean("hide_on_cross_map", false);
@@ -631,6 +643,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvNormalBottomInfoStatus != null) {
             tvNormalBottomInfoStatus.setText(normalBottomInfoEnabled ? "底栏到达信息已启用" : "底栏到达信息已禁用");
+        }
+        if (cbNormalCruiseInfoEnabled != null) {
+            cbNormalCruiseInfoEnabled.setChecked(normalCruiseInfoEnabled);
+        }
+        if (tvNormalCruiseInfoStatus != null) {
+            tvNormalCruiseInfoStatus.setText(normalCruiseInfoEnabled ? "第一排图文信息已启用" : "第一排图文信息已禁用");
         }
         if (cbMinimalLaneEnabled != null) {
             cbMinimalLaneEnabled.setChecked(minimalLaneEnabled);
@@ -819,6 +837,7 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean("traffic_light_fill_enabled", isTrafficLightFillEnabled)
                 .putBoolean("normal_navi_tmc_enabled", normalTmcEnabled)
                 .putBoolean("normal_navi_bottom_info_enabled", normalBottomInfoEnabled)
+                .putBoolean("normal_cruise_info_enabled", normalCruiseInfoEnabled)
                 .putBoolean("minimal_navi_lane_enabled", minimalLaneEnabled);
         editor.putBoolean("minimal_camera_enabled", isMinimalCameraEnabled);
         editor.putBoolean("minimal_road_name_enabled", isMinimalRoadNameEnabled);
@@ -934,6 +953,7 @@ public class MainActivity extends AppCompatActivity {
         updateSwitchTheme(cbTrafficLightFillEnabled, accentColor);
         updateSwitchTheme(cbNormalTmcEnabled, accentColor);
         updateSwitchTheme(cbNormalBottomInfoEnabled, accentColor);
+        updateSwitchTheme(cbNormalCruiseInfoEnabled, accentColor);
         updateSwitchTheme(cbMinimalLaneEnabled, accentColor);
         updateSwitchTheme(cbMinimalRoadNameEnabled, accentColor);
         updateSwitchTheme(cbMinimalDirectionEnabled, accentColor);
@@ -1334,6 +1354,27 @@ public class MainActivity extends AppCompatActivity {
             cardNormalBottomInfoToggle.setOnClickListener(v -> {
                 if (cbNormalBottomInfoEnabled != null) {
                     cbNormalBottomInfoEnabled.toggle();
+                }
+            });
+        }
+
+        if (cbNormalCruiseInfoEnabled != null) {
+            cbNormalCruiseInfoEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                normalCruiseInfoEnabled = isChecked;
+                savePreferences();
+                if (tvNormalCruiseInfoStatus != null) {
+                    tvNormalCruiseInfoStatus.setText(isChecked ? "第一排图文信息已启用" : "第一排图文信息已禁用");
+                }
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.refreshWindow();
+                }
+            });
+        }
+        if (cardNormalCruiseInfoToggle != null) {
+            cardNormalCruiseInfoToggle.setOnClickListener(v -> {
+                if (cbNormalCruiseInfoEnabled != null) {
+                    cbNormalCruiseInfoEnabled.toggle();
                 }
             });
         }
