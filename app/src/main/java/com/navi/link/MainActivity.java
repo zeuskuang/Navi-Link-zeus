@@ -237,6 +237,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean normalLaneEnabled = false;
     private boolean avoidForegroundEnabled = false;
     private boolean overspeedWarningEnabled = true;
+    private int overspeedThreshold = 0;
+    private View[] overspeedThresholdChips;
+    private LinearLayout llOverspeedThresholdRow;
 
     private boolean clusterMirrorEnabled = false;
     private int clusterDisplayId = -1;
@@ -268,9 +271,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            EdgeToEdge.enable(this);
-        }
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         initViews();
         loadPreferences();
@@ -375,6 +376,14 @@ public class MainActivity extends AppCompatActivity {
         cbOverspeedWarningEnabled = findViewById(R.id.cb_overspeed_warning_enabled);
         tvOverspeedWarningStatus = findViewById(R.id.tv_overspeed_warning_status);
         cardOverspeedWarningToggle = findViewById(R.id.card_overspeed_warning_toggle);
+        llOverspeedThresholdRow = findViewById(R.id.ll_overspeed_threshold_row);
+        overspeedThresholdChips = new View[]{
+                findViewById(R.id.chip_overspeed_0),
+                findViewById(R.id.chip_overspeed_10),
+                findViewById(R.id.chip_overspeed_20),
+                findViewById(R.id.chip_overspeed_30),
+                findViewById(R.id.chip_overspeed_50)
+        };
         cbMinimalCameraEnabled = findViewById(R.id.cb_minimal_camera_enabled);
         tvMinimalCameraStatus = findViewById(R.id.tv_minimal_camera_status);
         cardMinimalCameraToggle = findViewById(R.id.card_minimal_camera_toggle);
@@ -519,6 +528,7 @@ public class MainActivity extends AppCompatActivity {
         normalLaneEnabled = sp.getBoolean("normal_navi_lane_enabled", false);
         avoidForegroundEnabled = sp.getBoolean("hide_on_amap_foreground", false);
         overspeedWarningEnabled = sp.getBoolean("overspeed_warning_enabled", true);
+        overspeedThreshold = sp.getInt("overspeed_threshold", 0);
         isMinimalCameraEnabled = sp.getBoolean("minimal_camera_enabled", false);
         isMinimalRoadNameEnabled = sp.getBoolean("minimal_road_name_enabled", true);
         isMinimalDirectionEnabled = sp.getBoolean("minimal_direction_enabled", false);
@@ -830,6 +840,7 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean("hide_on_amap_foreground", avoidForegroundEnabled)
                 .putBoolean("hide_on_cross_map", crossMapHideEnabled)
                 .putBoolean("overspeed_warning_enabled", overspeedWarningEnabled)
+                .putInt("overspeed_threshold", overspeedThreshold)
                 .putBoolean("cluster_mirror_enabled", clusterMirrorEnabled)
                 .putInt("cluster_display_id", clusterDisplayId)
                 .putBoolean("hide_main_when_cluster_active", hideMainWhenClusterActive)
@@ -1162,11 +1173,18 @@ public class MainActivity extends AppCompatActivity {
         if (tvOverspeedWarningStatus != null) {
             tvOverspeedWarningStatus.setText(overspeedWarningEnabled ? "超速时车速红色报警并闪烁" : "已关闭超速红色提醒");
         }
+        updateThresholdChips();
+        if (llOverspeedThresholdRow != null) {
+            llOverspeedThresholdRow.setVisibility(overspeedWarningEnabled ? View.VISIBLE : View.GONE);
+        }
         CompoundButton.OnCheckedChangeListener overspeedWarningListener = (buttonView, isChecked) -> {
             overspeedWarningEnabled = isChecked;
             savePreferences();
             if (tvOverspeedWarningStatus != null) {
                 tvOverspeedWarningStatus.setText(isChecked ? "超速时车速红色报警并闪烁" : "已关闭超速红色提醒");
+            }
+            if (llOverspeedThresholdRow != null) {
+                llOverspeedThresholdRow.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             }
             FloatingWindowManager fwm = FloatingWindowManager.getInstance();
             if (fwm != null) {
@@ -1176,6 +1194,22 @@ public class MainActivity extends AppCompatActivity {
         cbOverspeedWarningEnabled.setOnCheckedChangeListener(overspeedWarningListener);
         if (cardOverspeedWarningToggle != null) {
             cardOverspeedWarningToggle.setOnClickListener(v -> cbOverspeedWarningEnabled.toggle());
+        }
+
+        // 阈值 chip 点击监听
+        int[] thresholdValues = {0, 10, 20, 30, 50};
+        for (int i = 0; i < overspeedThresholdChips.length; i++) {
+            final int value = thresholdValues[i];
+            final View chip = overspeedThresholdChips[i];
+            chip.setOnClickListener(v -> {
+                overspeedThreshold = value;
+                savePreferences();
+                updateThresholdChips();
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.refreshWindow();
+                }
+            });
         }
 
         cbMinimalCameraEnabled.setChecked(isMinimalCameraEnabled);
@@ -1936,6 +1970,29 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateThresholdChips() {
+        int[] values = {0, 10, 20, 30, 50};
+        boolean isDark = ((themeColor >> 16) & 0xFF) * 0.299
+                + ((themeColor >> 8) & 0xFF) * 0.587
+                + (themeColor & 0xFF) * 0.114 < 100;
+        int accentColor = isDark ? Color.WHITE : themeColor;
+        for (int i = 0; i < overspeedThresholdChips.length; i++) {
+            TextView chip = (TextView) overspeedThresholdChips[i];
+            boolean selected = overspeedThreshold == values[i];
+            GradientDrawable bg = new GradientDrawable();
+            bg.setShape(GradientDrawable.RECTANGLE);
+            bg.setCornerRadius(dpToPx(14));
+            if (selected) {
+                bg.setColor(accentColor);
+                chip.setTextColor(0xFFFFFFFF);
+            } else {
+                bg.setColor(0x33FFFFFF);
+                chip.setTextColor(0xFFAAAAAA);
+            }
+            chip.setBackground(bg);
         }
     }
 }

@@ -1269,42 +1269,150 @@
                                 android:foreground="?android:attr/selectableItemBackground">
 
                                 <LinearLayout
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:paddingHorizontal="16dp"
-                                    android:paddingVertical="12dp"
+                                    android:orientation="vertical"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content">
 
                                     <LinearLayout
-                                        android:orientation="vertical"
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="1">
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:paddingHorizontal="16dp"
+                                        android:paddingVertical="12dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content">
 
-                                        <TextView
-                                            android:text="超速红色提醒"
-                                            android:textSize="15sp"
-                                            android:textColor="#FFFFFFFF"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="wrap_content" />
+                                        <LinearLayout
+                                            android:orientation="vertical"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1">
 
-                                        <TextView
-                                            android:id="@+id/tv_overspeed_warning_status"
-                                            android:text="超速时车速红色报警并闪烁"
-                                            android:textSize="12sp"
-                                            android:textColor="#FF888888"
-                                            android:layout_marginTop="2dp"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="wrap_content" />
+                                            <TextView
+                                                android:text="超速红色提醒"
+                                                android:textSize="15sp"
+                                                android:textColor="#FFFFFFFF"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content" />
+
+                                            <TextView
+                                                android:id="@+id/tv_overspeed_warning_status"
+                                                android:text="超速时车速红色报警并闪烁"
+                                                android:textSize="12sp"
+                                                android:textColor="#FF888888"
+                                                android:layout_marginTop="2dp"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content" />
+                                        </LinearLayout>
+
+                                        <androidx.appcompat.widget.SwitchCompat
+                                            android:id="@+id/cb_overspeed_warning_enabled"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:clickable="false"
+                                            android:focusable="false" />
                                     </LinearLayout>
 
-                                    <androidx.appcompat.widget.SwitchCompat
-                                        android:id="@+id/cb_overspeed_warning_enabled"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:clickable="false"
-                                        android:focusable="false" />
+                                    <!-- 超速阈值选择行 -->
+                                    <LinearLayout
+                                        android:id="@+id/ll_overspeed_threshold_row"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:paddingHorizontal="16dp"
+                                        android:paddingBottom="12dp"
+                                        android:visibility="gone"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content">
+
+                                        <TextView
+                                            android:text="超速阈值"
+                                            android:textSize="13sp"
+                                            android:textColor="#FFAAAAAA"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginEnd="12dp" />
+
+                                        <LinearLayout
+                                            android:orientation="horizontal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content">
+
+                                            <TextView
+                                                android:id="@+id/chip_overspeed_0"
+                                                android:text="0%"
+                                                android:textSize="13sp"
+                                                android:gravity="center"
+                                                android:paddingHorizontal="12dp"
+                                                android:paddingVertical="4dp"
+                                                android:layout_marginEnd="6dp"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:minWidth="40dp"
+                                                android:foreground="?android:attr/selectableItemBackground"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content" />
+
+                                            <TextView
+                                                android:id="@+id/chip_overspeed_10"
+                                                android:text="10%"
+                                                android:textSize="13sp"
+                                                android:gravity="center"
+                                                android:paddingHorizontal="12dp"
+                                                android:paddingVertical="4dp"
+                                                android:layout_marginEnd="6dp"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:minWidth="40dp"
+                                                android:foreground="?android:attr/selectableItemBackground"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content" />
+
+                                            <TextView
+                                                android:id="@+id/chip_overspeed_20"
+                                                android:text="20%"
+                                                android:textSize="13sp"
+                                                android:gravity="center"
+                                                android:paddingHorizontal="12dp"
+                                                android:paddingVertical="4dp"
+                                                android:layout_marginEnd="6dp"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:minWidth="40dp"
+                                                android:foreground="?android:attr/selectableItemBackground"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content" />
+
+                                            <TextView
+                                                android:id="@+id/chip_overspeed_30"
+                                                android:text="30%"
+                                                android:textSize="13sp"
+                                                android:gravity="center"
+                                                android:paddingHorizontal="12dp"
+                                                android:paddingVertical="4dp"
+                                                android:layout_marginEnd="6dp"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:minWidth="40dp"
+                                                android:foreground="?android:attr/selectableItemBackground"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content" />
+
+                                            <TextView
+                                                android:id="@+id/chip_overspeed_50"
+                                                android:text="50%"
+                                                android:textSize="13sp"
+                                                android:gravity="center"
+                                                android:paddingHorizontal="12dp"
+                                                android:paddingVertical="4dp"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:minWidth="40dp"
+                                                android:foreground="?android:attr/selectableItemBackground"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content" />
+
+                                        </LinearLayout>
+                                    </LinearLayout>
+
                                 </LinearLayout>
                             </com.google.android.material.card.MaterialCardView>
 

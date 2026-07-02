@@ -1194,11 +1194,17 @@ public class FloatingWindowManager {
     private void checkAndUpdateOverspeed() {
         SharedPreferences sp = context.getSharedPreferences("floating_config", Context.MODE_PRIVATE);
         boolean overspeedWarningEnabled = sp.getBoolean("overspeed_warning_enabled", true);
+        if (!overspeedWarningEnabled) {
+            setOverspeedWarning(false);
+            return;
+        }
+        int threshold = sp.getInt("overspeed_threshold", 0);
+        double factor = 1.0 + threshold / 100.0;
         boolean isOverspeed;
         if (currentMode == MODE_NAVI) {
-            isOverspeed = overspeedWarningEnabled && cachedLimitedSpeed > 0 && cachedSpeed > cachedLimitedSpeed;
+            isOverspeed = cachedLimitedSpeed > 0 && cachedSpeed > Math.round(cachedLimitedSpeed * factor);
         } else {
-            isOverspeed = overspeedWarningEnabled && cachedCameraSpeed > 0 && cachedSpeed > cachedCameraSpeed;
+            isOverspeed = cachedCameraSpeed > 0 && cachedSpeed > Math.round(cachedCameraSpeed * factor);
         }
         setOverspeedWarning(isOverspeed);
     }

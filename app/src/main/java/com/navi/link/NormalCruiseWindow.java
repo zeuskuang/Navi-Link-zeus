@@ -59,8 +59,10 @@ public class NormalCruiseWindow extends BaseFloatingWindow {
         if (tvCnSpeed != null) {
             tvCnSpeed.setText(String.valueOf(speed));
             // 超速警告：限速>0 且 当前速度>限速 → 红色+闪烁 (受 overspeed_warning_enabled 开关控制)
+            int threshold = sp.getInt("overspeed_threshold", 0);
+            double factor = 1.0 + threshold / 100.0;
             boolean isOverspeedWarningEnabled = sp.getBoolean("overspeed_warning_enabled", true);
-            boolean overspeed = isOverspeedWarningEnabled && cameraSpeed > 0 && speed > cameraSpeed;
+            boolean overspeed = isOverspeedWarningEnabled && cameraSpeed > 0 && speed > Math.round(cameraSpeed * factor);
             if (overspeed) {
                 tvCnSpeed.setTextColor(Color.RED);
                 ObjectAnimator animator = (ObjectAnimator) tvCnSpeed.getTag();

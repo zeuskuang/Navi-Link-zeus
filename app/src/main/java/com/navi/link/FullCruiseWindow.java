@@ -57,8 +57,10 @@ public class FullCruiseWindow extends BaseFloatingWindow {
         if (tvFullCruiseSpeed != null) {
             tvFullCruiseSpeed.setText(String.valueOf(speed));
             // 超速警告
+            int threshold = sp.getInt("overspeed_threshold", 0);
+            double factor = 1.0 + threshold / 100.0;
             boolean isOverspeedWarningEnabled = sp.getBoolean("overspeed_warning_enabled", true);
-            boolean overspeed = isOverspeedWarningEnabled && cameraSpeed > 0 && speed > cameraSpeed;
+            boolean overspeed = isOverspeedWarningEnabled && cameraSpeed > 0 && speed > Math.round(cameraSpeed * factor);
             if (overspeed) {
                 tvFullCruiseSpeed.setTextColor(Color.RED);
                 ObjectAnimator animator = (ObjectAnimator) tvFullCruiseSpeed.getTag();
