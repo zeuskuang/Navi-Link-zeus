@@ -672,7 +672,64 @@
                                             android:text="竖版完整" />
                                     </LinearLayout>
                                 </com.google.android.material.card.MaterialCardView>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/card_navi_custom"
+                                    android:focusable="true"
+                                    android:clickable="true"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    app:cardBackgroundColor="#FF262626"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#FF444444"
+                                    app:strokeWidth="1dp">
+
+                                    <LinearLayout
+                                        android:gravity="center"
+                                        android:orientation="vertical"
+                                        android:padding="10dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content">
+
+                                        <RadioButton
+                                            android:id="@+id/rb_navi_custom"
+                                            android:textSize="13sp"
+                                            android:textColor="#FFFFFFFF"
+                                            android:clickable="false"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="自定义导航"
+                                            android:buttonTint="#FF4FC3F7" />
+
+                                        <TextView
+                                            android:textSize="10sp"
+                                            android:textColor="#FF888888"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:gravity="center"
+                                            android:text="自由布局" />
+                                    </LinearLayout>
+                                </com.google.android.material.card.MaterialCardView>
                             </LinearLayout>
+
+                            <!-- 导航自定义布局编辑入口 -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_edit_navi_custom"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:layout_marginHorizontal="16dp"
+                                android:layout_marginTop="8dp"
+                                android:text="编辑自定义布局"
+                                android:textSize="13sp"
+                                android:textColor="#FF4FC3F7"
+                                app:strokeColor="#FF4FC3F7"
+                                app:cornerRadius="10dp"
+                                android:visibility="gone" />
 
                             <View
                                 android:layout_width="match_parent"
@@ -821,7 +878,64 @@
                                             android:text="竖版完整" />
                                     </LinearLayout>
                                 </com.google.android.material.card.MaterialCardView>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/card_cruise_custom"
+                                    android:focusable="true"
+                                    android:clickable="true"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    app:cardBackgroundColor="#FF262626"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#FF444444"
+                                    app:strokeWidth="1dp">
+
+                                    <LinearLayout
+                                        android:gravity="center"
+                                        android:orientation="vertical"
+                                        android:padding="10dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content">
+
+                                        <RadioButton
+                                            android:id="@+id/rb_cruise_custom"
+                                            android:textSize="13sp"
+                                            android:textColor="#FFFFFFFF"
+                                            android:clickable="false"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="自定义巡航"
+                                            android:buttonTint="#FF4FC3F7" />
+
+                                        <TextView
+                                            android:textSize="10sp"
+                                            android:textColor="#FF888888"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:gravity="center"
+                                            android:text="自由布局" />
+                                    </LinearLayout>
+                                </com.google.android.material.card.MaterialCardView>
                             </LinearLayout>
+
+                            <!-- 自定义布局编辑入口 -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_edit_custom_cruise"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:layout_marginHorizontal="16dp"
+                                android:layout_marginTop="8dp"
+                                android:text="编辑自定义布局"
+                                android:textSize="13sp"
+                                android:textColor="#FF4FC3F7"
+                                app:strokeColor="#FF4FC3F7"
+                                app:cornerRadius="10dp"
+                                android:visibility="gone" />
 
                             <View
                                 android:layout_width="match_parent"

@@ -10,6 +10,8 @@ public class FloatingWindowFactory {
                 return new MinimalCruiseWindow(context, floatingView);
             } else if (styleMode == 2) {
                 return new FullCruiseWindow(context, floatingView);
+            } else if (styleMode == 3) {
+                return new CustomCruiseWindow(context, floatingView);
             } else {
                 return new NormalCruiseWindow(context, floatingView);
             }
@@ -19,6 +21,8 @@ public class FloatingWindowFactory {
                     return new MinimalNaviWindow(context, floatingView);
                 case 2:
                     return new FullNaviWindow(context, floatingView);
+                case 3:
+                    return new CustomNaviWindow(context, floatingView);
                 case 0:
                 default:
                     return new NormalNaviWindow(context, floatingView);

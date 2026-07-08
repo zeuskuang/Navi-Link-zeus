@@ -74,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
     private MaterialCardView cardMinimal;
     private MaterialCardView cardNormal;
     private MaterialCardView cardFull;
+    private MaterialCardView cardNaviCustom;
+    private MaterialButton btnEditNaviCustom;
     private MaterialCardView cardServiceOnly;
     private MaterialCardView cardNormalStart;
     private MaterialCardView cardBgDark;
@@ -83,13 +85,17 @@ public class MainActivity extends AppCompatActivity {
     private RadioButton rbMinimal;
     private RadioButton rbNormal;
     private RadioButton rbFull;
+    private RadioButton rbNaviCustom;
     // 巡航窗口样式
     private MaterialCardView cardCruiseNormal;
     private MaterialCardView cardCruiseMinimal;
     private MaterialCardView cardCruiseFull;
+    private MaterialCardView cardCruiseCustom;
+    private MaterialButton btnEditCustomCruise;
     private RadioButton rbCruiseNormal;
     private RadioButton rbCruiseMinimal;
     private RadioButton rbCruiseFull;
+    private RadioButton rbCruiseCustom;
     private RadioButton rbServiceOnly;
     private RadioButton rbNormalStart;
     private RadioButton rbBgDark;
@@ -236,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isMinimalStyle = false;
     private int styleMode = 0;
-    private int cruiseStyleMode = 0; // 0=常规巡航, 1=灵动岛巡航, 2=全数据巡航
+    private int cruiseStyleMode = 0; // 0=常规巡航, 1=灵动岛巡航, 2=全数据巡航, 3=自定义巡航
     private boolean isServiceOnlyMode = false;
     private int startupMode = 0; // 0=正常, 1=纯服务, 2=启动高德地图
     private String targetAmapPackage = "";
@@ -349,6 +355,8 @@ public class MainActivity extends AppCompatActivity {
         cardNormal = findViewById(R.id.card_normal);
         cardMinimal = findViewById(R.id.card_minimal);
         cardFull = findViewById(R.id.card_full);
+        cardNaviCustom = findViewById(R.id.card_navi_custom);
+        btnEditNaviCustom = findViewById(R.id.btn_edit_navi_custom);
         cardServiceOnly = findViewById(R.id.card_service_only);
         cardNormalStart = findViewById(R.id.card_normal_start);
         cardBgDark = findViewById(R.id.card_bg_dark);
@@ -357,12 +365,16 @@ public class MainActivity extends AppCompatActivity {
         rbNormal = findViewById(R.id.rb_normal);
         rbMinimal = findViewById(R.id.rb_minimal);
         rbFull = findViewById(R.id.rb_full);
+        rbNaviCustom = findViewById(R.id.rb_navi_custom);
         cardCruiseNormal = findViewById(R.id.card_cruise_normal);
         cardCruiseMinimal = findViewById(R.id.card_cruise_minimal);
         cardCruiseFull = findViewById(R.id.card_cruise_full);
+        cardCruiseCustom = findViewById(R.id.card_cruise_custom);
+        btnEditCustomCruise = findViewById(R.id.btn_edit_custom_cruise);
         rbCruiseNormal = findViewById(R.id.rb_cruise_normal);
         rbCruiseMinimal = findViewById(R.id.rb_cruise_minimal);
         rbCruiseFull = findViewById(R.id.rb_cruise_full);
+        rbCruiseCustom = findViewById(R.id.rb_cruise_custom);
         rbServiceOnly = findViewById(R.id.rb_service_only);
         rbNormalStart = findViewById(R.id.rb_normal_start);
         rbBgDark = findViewById(R.id.rb_bg_dark);
@@ -809,10 +821,15 @@ public class MainActivity extends AppCompatActivity {
         rbNormal.setChecked(styleMode == 0);
         rbMinimal.setChecked(styleMode == 1);
         rbFull.setChecked(styleMode == 2);
+        rbNaviCustom.setChecked(styleMode == 3);
         int accentColor = getAccentColor();
         cardNormal.setStrokeColor(styleMode == 0 ? accentColor : Color.parseColor("#444444"));
         cardMinimal.setStrokeColor(styleMode == 1 ? accentColor : Color.parseColor("#444444"));
         cardFull.setStrokeColor(styleMode == 2 ? accentColor : Color.parseColor("#444444"));
+        cardNaviCustom.setStrokeColor(styleMode == 3 ? accentColor : Color.parseColor("#444444"));
+        if (btnEditNaviCustom != null) {
+            btnEditNaviCustom.setVisibility(styleMode == 3 ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void selectCruiseStyle(int mode) {
@@ -828,10 +845,15 @@ public class MainActivity extends AppCompatActivity {
         rbCruiseNormal.setChecked(cruiseStyleMode == 0);
         rbCruiseMinimal.setChecked(cruiseStyleMode == 1);
         rbCruiseFull.setChecked(cruiseStyleMode == 2);
+        rbCruiseCustom.setChecked(cruiseStyleMode == 3);
         int accentColor = getAccentColor();
         cardCruiseNormal.setStrokeColor(cruiseStyleMode == 0 ? accentColor : Color.parseColor("#444444"));
         cardCruiseMinimal.setStrokeColor(cruiseStyleMode == 1 ? accentColor : Color.parseColor("#444444"));
         cardCruiseFull.setStrokeColor(cruiseStyleMode == 2 ? accentColor : Color.parseColor("#444444"));
+        cardCruiseCustom.setStrokeColor(cruiseStyleMode == 3 ? accentColor : Color.parseColor("#444444"));
+        if (btnEditCustomCruise != null) {
+            btnEditCustomCruise.setVisibility(cruiseStyleMode == 3 ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void selectBackgroundMode(int mode) {
@@ -975,9 +997,11 @@ public class MainActivity extends AppCompatActivity {
         CompoundButtonCompat.setButtonTintList(rbNormal, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbMinimal, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbFull, accentColorStateList);
+        CompoundButtonCompat.setButtonTintList(rbNaviCustom, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbCruiseNormal, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbCruiseMinimal, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbCruiseFull, accentColorStateList);
+        CompoundButtonCompat.setButtonTintList(rbCruiseCustom, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbServiceOnly, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbNormalStart, accentColorStateList);
         CompoundButtonCompat.setButtonTintList(rbBgDark, accentColorStateList);
@@ -1111,9 +1135,27 @@ public class MainActivity extends AppCompatActivity {
         cardNormal.setOnClickListener(v -> selectStyle(0));
         cardMinimal.setOnClickListener(v -> selectStyle(1));
         cardFull.setOnClickListener(v -> selectStyle(2));
+        cardNaviCustom.setOnClickListener(v -> selectStyle(3));
+        if (btnEditNaviCustom != null) {
+            btnEditNaviCustom.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, CruiseLayoutEditorActivity.class);
+                intent.putExtra(CruiseLayoutEditorActivity.EXTRA_EDIT_MODE,
+                        CruiseLayoutEditorActivity.EDIT_MODE_NAVI);
+                startActivity(intent);
+            });
+        }
         cardCruiseNormal.setOnClickListener(v -> selectCruiseStyle(0));
         cardCruiseMinimal.setOnClickListener(v -> selectCruiseStyle(1));
         cardCruiseFull.setOnClickListener(v -> selectCruiseStyle(2));
+        cardCruiseCustom.setOnClickListener(v -> selectCruiseStyle(3));
+        if (btnEditCustomCruise != null) {
+            btnEditCustomCruise.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, CruiseLayoutEditorActivity.class);
+                intent.putExtra(CruiseLayoutEditorActivity.EXTRA_EDIT_MODE,
+                        CruiseLayoutEditorActivity.EDIT_MODE_CRUISE);
+                startActivity(intent);
+            });
+        }
         cardBgDark.setOnClickListener(v -> selectBackgroundMode(0));
         cardBgSemi.setOnClickListener(v -> selectBackgroundMode(1));
         cardBgTransparent.setOnClickListener(v -> selectBackgroundMode(2));
@@ -1746,15 +1788,15 @@ public class MainActivity extends AppCompatActivity {
     private void updateSeekBarToCurrentScale() {
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         float s;
-        String[] keys = {"scale_normal", "scale_minimal", "scale_full"};
-        float[] defaults = {1.0f, 1.0f, 1.0f};
+        String[] keys = {"scale_normal", "scale_minimal", "scale_full", "scale_custom"};
+        float[] defaults = {1.0f, 1.0f, 1.0f, 1.0f};
 
         FloatingWindowManager manager = FloatingWindowManager.getInstance();
         int idx;
         if (manager != null && manager.isActive() && manager.getCurrentMode() == FloatingWindowManager.MODE_CRUISE) {
-            idx = (cruiseStyleMode == 1) ? 1 : (cruiseStyleMode == 2 ? 2 : 0); // 灵动岛巡航用1，全数据巡航用2，常规巡航用0
+            idx = (cruiseStyleMode == 1) ? 1 : (cruiseStyleMode == 2) ? 2 : (cruiseStyleMode == 3) ? 3 : 0;
         } else {
-            idx = Math.max(0, Math.min(styleMode, 2));
+            idx = Math.max(0, Math.min(styleMode, 3));
         }
         s = sp.getFloat(keys[idx], defaults[idx]);
 

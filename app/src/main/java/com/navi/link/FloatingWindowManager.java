@@ -73,9 +73,9 @@ public class FloatingWindowManager {
     // 状态
     private int currentMode = MODE_CRUISE;
     private int styleMode = 0; // 0=normal, 1=minimal, 2=full (导航窗口)
-    private int cruiseStyleMode = 0; // 0=常规巡航, 1=灵动岛巡航, 2=全数据巡航
-    // 各模式独立缩放: [0]=常规/常规巡航, [1]=灵动岛/灵动岛巡航, [2]=全数据
-    private float[] scales = {1.0f, 1.0f, 1.0f};
+    private int cruiseStyleMode = 0; // 0=常规巡航, 1=灵动岛巡航, 2=全数据巡航, 3=自定义巡航
+    // 各模式独立缩放: [0]=常规/常规巡航, [1]=灵动岛/灵动岛巡航, [2]=全数据, [3]=自定义巡航
+    private float[] scales = {1.0f, 1.0f, 1.0f, 1.0f};
     private int themeColor = 0xFF4FC3F7;
     private boolean isShowing = false;
     private boolean hasActiveData = false; // 是否收到过实际导航/巡航广播数据
@@ -205,6 +205,7 @@ public class FloatingWindowManager {
         scales[0] = sp.getFloat("scale_normal", 1.0f);
         scales[1] = sp.getFloat("scale_minimal", 1.0f);
         scales[2] = sp.getFloat("scale_full", 1.0f);
+        scales[3] = sp.getFloat("scale_custom", 1.0f);
         themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
         savedPosX = sp.getInt("window_pos_x", -1);
         savedPosY = sp.getInt("window_pos_y", -1);
@@ -227,9 +228,11 @@ public class FloatingWindowManager {
         if (currentMode == MODE_CRUISE) {
             if (cruiseStyleMode == 1) return 1; // 灵动岛巡航
             if (cruiseStyleMode == 2) return 2; // 全数据巡航
+            if (cruiseStyleMode == 3) return 3; // 自定义巡航
             return 0; // 常规巡航
         }
         if (styleMode == 0) return 0; // 常规
+        if (styleMode == 3) return 3; // 自定义导航
         return styleMode; // 1=灵动岛, 2=全数据
     }
 
@@ -242,6 +245,7 @@ public class FloatingWindowManager {
                 .putFloat("scale_normal", scales[0])
                 .putFloat("scale_minimal", scales[1])
                 .putFloat("scale_full", scales[2])
+                .putFloat("scale_custom", scales[3])
                 .apply();
     }
 
@@ -508,12 +512,15 @@ public class FloatingWindowManager {
         if (currentMode == MODE_NAVI) {
             if (styleMode == 2) layoutRes = R.layout.layout_floating_navi_full;
             else if (styleMode == 1) layoutRes = R.layout.layout_floating_navi_minimal;
+            else if (styleMode == 3) layoutRes = R.layout.layout_floating_navi_custom;
             else layoutRes = R.layout.layout_floating_navi_normal;
         } else {
             layoutRes = effectiveStyle == 1
                     ? R.layout.layout_floating_cruise_minimal
                     : effectiveStyle == 2
                     ? R.layout.layout_floating_cruise_full
+                    : effectiveStyle == 3
+                    ? R.layout.layout_floating_cruise_custom
                     : R.layout.layout_floating_cruise_normal;
         }
 
@@ -1435,12 +1442,15 @@ public class FloatingWindowManager {
             if (currentMode == MODE_NAVI) {
                 if (styleMode == 2) layoutRes = R.layout.layout_floating_navi_full;
                 else if (styleMode == 1) layoutRes = R.layout.layout_floating_navi_minimal;
+                else if (styleMode == 3) layoutRes = R.layout.layout_floating_navi_custom;
                 else layoutRes = R.layout.layout_floating_navi_normal;
             } else {
                 layoutRes = effectiveStyle == 1
                         ? R.layout.layout_floating_cruise_minimal
                         : effectiveStyle == 2
                         ? R.layout.layout_floating_cruise_full
+                        : effectiveStyle == 3
+                        ? R.layout.layout_floating_cruise_custom
                         : R.layout.layout_floating_cruise_normal;
             }
 

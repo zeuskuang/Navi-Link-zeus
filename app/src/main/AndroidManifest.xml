@@ -44,6 +44,12 @@
             android:theme="@style/Theme.NaviLink"
             android:launchMode="singleTop" />
 
+        <activity
+            android:name=".CruiseLayoutEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.NaviLink"
+            android:launchMode="singleTop" />
+
         <service
             android:name=".AutoMapService"
             android:enabled="true"
