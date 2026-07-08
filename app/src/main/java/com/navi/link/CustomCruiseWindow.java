@@ -1,0 +1,232 @@
+package com.navi.link;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.view.View;
+import android.view.ViewGroup;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.FrameLayout;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class CustomCruiseWindow extends BaseFloatingWindow {
+
+    private TextView tvCruiseSpeed, tvCruiseUnit;
+    private TextView tvCruiseDirection, tvCruiseRoadName;
+    private LinearLayout llTrafficLightsContainer;
+    private CameraWarningView cameraGroup;
+    private LaneLineView laneLineView;
+    private int themeColor = 0xFF4FC3F7;
+    private boolean isOverspeedBlinking = false;
+    public static final String PREFIX = "custom_cruise_";
+
+    public CustomCruiseWindow(Context context, View floatingView) {
+        super(context, floatingView);
+    }
+
+    @Override
+    protected void initViews() {
+        tvCruiseDirection = floatingView.findViewById(R.id.custom_cruise_direction);
+        tvCruiseSpeed = floatingView.findViewById(R.id.tv_cruise_speed);
+        tvCruiseUnit = floatingView.findViewById(R.id.tv_cruise_unit);
+        tvCruiseRoadName = floatingView.findViewById(R.id.custom_road_name);
+        llTrafficLightsContainer = floatingView.findViewById(R.id.custom_traffic_lights);
+        cameraGroup = floatingView.findViewById(R.id.custom_camera);
+        laneLineView = floatingView.findViewById(R.id.custom_lane_line);
+        if (laneLineView != null) laneLineView.setSimpleMode(true);
+        themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
+        applyCustomLayout();
+    }
+
+    public void applyCustomLayout() {
+        applyElement(tvCruiseDirection, "direction");
+        View speedGroup = floatingView.findViewById(R.id.custom_speed_group);
+        applyElement(speedGroup, "speed");
+        if (tvCruiseUnit != null)
+            tvCruiseUnit.setVisibility(tvCruiseSpeed != null ? tvCruiseSpeed.getVisibility() : View.GONE);
+        applyElement(tvCruiseRoadName, "roadname");
+        applyElement(laneLineView, "lane");
+        applyElement(llTrafficLightsContainer, "trafficlight");
+        applyElement(cameraGroup, "camera");
+    }
+
+    private void applyElement(View view, String key) {
+        if (view == null) return;
+        float density = context.getResources().getDisplayMetrics().density;
+        float xDp = sp.getFloat(PREFIX + key + "_x", getDefaultX(key));
+        float yDp = sp.getFloat(PREFIX + key + "_y", getDefaultY(key));
+        boolean enabled = sp.getBoolean(PREFIX + key + "_enabled", true);
+        int xPx = Math.round(xDp * density);
+        int yPx = Math.round(yDp * density);
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp instanceof FrameLayout.LayoutParams) {
+            FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) lp;
+            flp.leftMargin = xPx; flp.topMargin = yPx;
+            view.setLayoutParams(flp);
+        }
+        view.setVisibility(enabled ? View.VISIBLE : View.GONE);
+    }
+
+    private float getDefaultX(String key) {
+        switch (key) {
+            case "direction": return 8; case "speed": return 8;
+            case "roadname": return 110; case "lane": return 240;
+            case "trafficlight": return 200; case "camera": return 300;
+            default: return 0;
+        }
+    }
+
+    private float getDefaultY(String key) {
+        switch (key) {
+            case "direction": return 6; case "speed": return 30;
+            case "roadname": return 14; case "lane": return 6;
+            case "trafficlight": return 6; case "camera": return 6;
+            default: return 0;
+        }
+    }
+
+    @Override
+    public void updateNaviInfo(int icon, String disNum, String disUnit, String actionStr,
+            String roadName, String summaryStr, String eta, int progress, int curSpeed,
+            int limitedSpeed, int cameraType, int cameraDist, int cameraSpeed,
+            String endPoiName, int totalLightNum, int remainLightNum,
+            String curRoadName, int carDirection) {}
+
+    @Override
+    public void updateCruiseInfo(int speed, String roadName, int cameraType, int cameraSpeed, int cameraDist, int carDirection) {
+        boolean speedEnabled = sp.getBoolean(PREFIX + "speed_enabled", true);
+        if (tvCruiseSpeed != null) {
+            tvCruiseSpeed.setText(String.valueOf(speed));
+            int limit = cameraSpeed > 0 ? cameraSpeed : 0;
+            boolean overspeed = sp.getBoolean("overspeed_warning_enabled", true) && limit > 0 && speed > limit;
+            if (overspeed) {
+                tvCruiseSpeed.setTextColor(Color.RED);
+                ObjectAnimator anim = (ObjectAnimator) tvCruiseSpeed.getTag();
+                if (anim == null) {
+                    ObjectAnimator na = ObjectAnimator.ofFloat(tvCruiseSpeed, "alpha", 1f, 0.3f);
+                    na.setDuration(500); na.setRepeatCount(ValueAnimator.INFINITE);
+                    na.setRepeatMode(ValueAnimator.REVERSE); na.start();
+                    tvCruiseSpeed.setTag(na); isOverspeedBlinking = true;
+                }
+            } else {
+                ObjectAnimator anim = (ObjectAnimator) tvCruiseSpeed.getTag();
+                if (anim != null) { anim.cancel(); tvCruiseSpeed.setTag(null); }
+                tvCruiseSpeed.setAlpha(1f); isOverspeedBlinking = false;
+                int accent = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+                tvCruiseSpeed.setTextColor(accent);
+            }
+            tvCruiseSpeed.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
+        }
+        if (tvCruiseUnit != null) tvCruiseUnit.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
+        if (tvCruiseRoadName != null) {
+            if (sp.getBoolean(PREFIX + "roadname_enabled", true)) {
+                tvCruiseRoadName.setText(roadName);
+                tvCruiseRoadName.setVisibility(View.VISIBLE);
+            } else tvCruiseRoadName.setVisibility(View.GONE);
+        }
+        if (tvCruiseDirection != null) {
+            if (sp.getBoolean(PREFIX + "direction_enabled", true) && carDirection >= 0) {
+                tvCruiseDirection.setText(getDirectionText(carDirection));
+                tvCruiseDirection.setVisibility(View.VISIBLE);
+            } else tvCruiseDirection.setVisibility(View.GONE);
+        }
+        if (cameraGroup != null) {
+            if (sp.getBoolean(PREFIX + "camera_enabled", true))
+                cameraGroup.updateCameraInfo(cameraType, cameraDist, cameraSpeed);
+            else cameraGroup.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void updateTrafficLight(int status, int dir, int countdown) {}
+
+    @Override
+    public void updateCruiseTrafficLights(JSONArray lightsArray) {
+        if (llTrafficLightsContainer == null) return;
+        int count = lightsArray != null ? lightsArray.length() : 0;
+        if (count == 0) { llTrafficLightsContainer.setVisibility(View.GONE); llTrafficLightsContainer.removeAllViews(); return; }
+        llTrafficLightsContainer.removeAllViews();
+        float scale = FloatingWindowManager.getInstance().getScale();
+        for (int i = 0; i < count; i++) {
+            try {
+                JSONObject obj = lightsArray.getJSONObject(i);
+                TrafficLightView lv = new TrafficLightView(context);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                lp.setMarginStart(dpToPx(5)); lv.setLayoutParams(lp);
+                if (scale != 1.0f) scaleViewRecursive(lv, scale);
+                int s = obj.getInt("status"), c = obj.getInt("countdown"), d = obj.getInt("dir");
+                lv.setVisibility(c > 0 ? View.VISIBLE : View.GONE);
+                if (c > 0) lv.setData(s, d, c, false);
+                llTrafficLightsContainer.addView(lv);
+            } catch (Exception ignored) {}
+        }
+        llTrafficLightsContainer.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void updateLaneLines(String driveWayJson) {
+        if (laneLineView != null) {
+            if (sp.getBoolean(PREFIX + "lane_enabled", true)) laneLineView.updateLanes(driveWayJson);
+            else laneLineView.clear();
+        }
+    }
+
+    @Override public void updateExitInfo(String exitName, String exitDirection) {}
+
+    @Override
+    public void applyThemeColor(int themeColor) {
+        this.themeColor = themeColor;
+        int accent = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+        if (tvCruiseSpeed != null && !isOverspeedBlinking) tvCruiseSpeed.setTextColor(accent);
+        if (tvCruiseUnit != null && !isOverspeedBlinking) tvCruiseUnit.setTextColor(accent);
+        if (sp.getBoolean(PREFIX + "accent_navi_info_enabled", false)) {
+            if (tvCruiseRoadName != null) tvCruiseRoadName.setTextColor(accent);
+            if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(accent);
+            if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(accent);
+        }
+    }
+
+    @Override
+    public void applyDayNightTextColors(boolean isNightMode) {
+        this.isNightMode = isNightMode;
+        int p = isNightMode ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT;
+        if (tvCruiseRoadName != null) tvCruiseRoadName.setTextColor(p);
+        if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(p);
+        if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(p);
+        if (sp.getBoolean(PREFIX + "accent_navi_info_enabled", false)) {
+            int accent = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+            if (tvCruiseRoadName != null) tvCruiseRoadName.setTextColor(accent);
+            if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(accent);
+            if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(accent);
+        }
+    }
+
+    @Override
+    public void resetToDefaultTextColors() {
+        if (tvCruiseRoadName != null) tvCruiseRoadName.setTextColor(TEXT_PRIMARY_DARK);
+        if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(TEXT_PRIMARY_DARK);
+        if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(TEXT_PRIMARY_DARK);
+        if (sp.getBoolean(PREFIX + "accent_navi_info_enabled", false)) {
+            int accent = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+            if (tvCruiseRoadName != null) tvCruiseRoadName.setTextColor(accent);
+            if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(accent);
+            if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(accent);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (llTrafficLightsContainer != null) llTrafficLightsContainer.removeAllViews();
+        if (tvCruiseSpeed != null) {
+            ObjectAnimator anim = (ObjectAnimator) tvCruiseSpeed.getTag();
+            if (anim != null) { anim.cancel(); tvCruiseSpeed.setTag(null); }
+            tvCruiseSpeed.setAlpha(1f);
+        }
+        isOverspeedBlinking = false;
+    }
+}

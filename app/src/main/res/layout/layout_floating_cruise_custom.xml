@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/window_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <FrameLayout
+        android:id="@+id/root_layout"
+        android:background="@drawable/bg_main_navigation_box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- 方向 -->
+        <TextView
+            android:id="@+id/custom_cruise_direction"
+            android:textColor="#FF0099FF"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:text="北"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="6dp" />
+
+        <!-- 速度 + 单位 -->
+        <LinearLayout
+            android:id="@+id/custom_speed_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="bottom"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="30dp">
+
+            <TextView
+                android:id="@+id/tv_cruise_speed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="0"
+                android:textColor="#FF0099FF"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_cruise_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_marginBottom="0dp"
+                android:text="km/h"
+                android:textColor="#BBFFFFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- 路名 -->
+        <TextView
+            android:id="@+id/custom_road_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="110dp"
+            android:layout_marginTop="14dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:maxEms="6"
+            android:text="无名道路"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp" />
+
+        <!-- 车道线 -->
+        <com.navi.link.LaneLineView
+            android:id="@+id/custom_lane_line"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginStart="240dp"
+            android:layout_marginTop="6dp"
+            android:visibility="visible" />
+
+        <!-- 红绿灯容器 -->
+        <LinearLayout
+            android:id="@+id/custom_traffic_lights"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginStart="200dp"
+            android:layout_marginTop="6dp"
+            android:visibility="visible" />
+
+        <!-- 摄像头警告 -->
+        <com.navi.link.CameraWarningView
+            android:id="@+id/custom_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginStart="300dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_traffic_light_capsule"
+            android:paddingStart="4dp"
+            android:paddingEnd="10dp"
+            android:visibility="visible" />
+
+    </FrameLayout>
+</FrameLayout>
