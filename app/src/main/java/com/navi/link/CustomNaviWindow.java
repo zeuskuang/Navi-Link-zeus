@@ -2,6 +2,7 @@ package com.navi.link;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.animation.ObjectAnimator;
@@ -65,6 +66,33 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         applyElement(trafficLightView, "trafficlight");
         applyElement(cameraGroup, "camera");
         applyElement(tmcProgressBar, "tmc");
+        adjustRootToFit();
+    }
+
+    private void adjustRootToFit() {
+        View root = floatingView.findViewById(R.id.root_layout);
+        if (!(root instanceof ViewGroup)) return;
+        ViewGroup vg = (ViewGroup) root;
+        int maxR = 0, maxB = 0;
+        for (int i = 0; i < vg.getChildCount(); i++) {
+            View c = vg.getChildAt(i);
+            if (c.getVisibility() != View.VISIBLE) continue;
+            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
+            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
+            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
+            float s = c.getScaleX();
+            int r = mlp.leftMargin + (int)(w * s);
+            int b = mlp.topMargin + (int)(h * s);
+            if (r > maxR) maxR = r;
+            if (b > maxB) maxB = b;
+        }
+        int pad = dpToPx(10);
+        ViewGroup.LayoutParams lp = vg.getLayoutParams();
+        if (lp != null) {
+            lp.width = maxR + pad;
+            lp.height = maxB + pad;
+            vg.setLayoutParams(lp);
+        }
     }
 
     private void applyElement(View view, String key) {
@@ -82,6 +110,29 @@ public class CustomNaviWindow extends BaseFloatingWindow {
             view.setLayoutParams(flp);
         }
         view.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        // 应用保存的大小缩放
+        applySavedSize(view, key);
+    }
+
+    private void applySavedSize(View view, String key) {
+        if (view == null) return;
+        float sz = sp.getFloat(PREFIX + key + "_size", 1.0f);
+        view.setScaleX(sz);
+        view.setScaleY(sz);
+    }
+
+    private void reapplySize(String key) {
+        View v = null;
+        if ("direction".equals(key)) v = tvDirection;
+        else if ("speed".equals(key)) v = floatingView.findViewById(R.id.custom_navi_speed_group);
+        else if ("turninfo".equals(key)) v = floatingView.findViewById(R.id.custom_navi_turn_group);
+        else if ("roadname".equals(key)) v = tvRoadName;
+        else if ("lightcount".equals(key)) v = tvLightCount;
+        else if ("lane".equals(key)) v = laneLineView;
+        else if ("trafficlight".equals(key)) v = trafficLightView;
+        else if ("camera".equals(key)) v = cameraGroup;
+        else if ("tmc".equals(key)) v = tmcProgressBar;
+        applySavedSize(v, key);
     }
 
     private float getDefaultX(String key) {
@@ -139,6 +190,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
             tvSpeed.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
         }
         if (tvSpeedUnit != null) tvSpeedUnit.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
+        reapplySize("speed");
 
         if (ivTurnIcon != null) {
             int turnRes = getTurnIconRes(icon);
@@ -167,10 +219,12 @@ public class CustomNaviWindow extends BaseFloatingWindow {
             tvDistUnit.setText(disNumIsNow(disNum) ? "进入" : disUnit);
             tvDistUnit.setVisibility(turnInfoEnabled ? View.VISIBLE : View.GONE);
         }
+        reapplySize("turninfo");
 
         if (tvRoadName != null) {
             if (sp.getBoolean(PREFIX + "roadname_enabled", true)) {
                 tvRoadName.setText(roadName); tvRoadName.setVisibility(View.VISIBLE);
+                reapplySize("roadname");
             } else tvRoadName.setVisibility(View.GONE);
         }
         if (tvDirection != null) {
@@ -183,11 +237,13 @@ public class CustomNaviWindow extends BaseFloatingWindow {
             if (sp.getBoolean(PREFIX + "lightcount_enabled", true) && remainLightNum > 0) {
                 tvLightCount.setText("\uD83D\uDEA6" + remainLightNum);
                 tvLightCount.setVisibility(View.VISIBLE);
+                reapplySize("lightcount");
             } else tvLightCount.setVisibility(View.GONE);
         }
 
         mCameraType = cameraType; mCameraDist = cameraDist; mCameraSpeed = cameraSpeed;
         updateCameraDist();
+        reapplySize("direction");
     }
 
     @Override
@@ -199,6 +255,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         if (countdown <= 0) { trafficLightView.clear(); return; }
         trafficLightView.setVisibility(View.VISIBLE);
         trafficLightView.setData(status, dir, countdown, true);
+        reapplySize("trafficlight");
     }
 
     private void updateCameraDist() {
@@ -211,7 +268,10 @@ public class CustomNaviWindow extends BaseFloatingWindow {
     @Override
     public void updateLaneLines(String driveWayJson) {
         if (laneLineView != null) {
-            if (sp.getBoolean(PREFIX + "lane_enabled", true)) laneLineView.updateLanes(driveWayJson);
+            if (sp.getBoolean(PREFIX + "lane_enabled", true)) {
+                laneLineView.updateLanes(driveWayJson);
+                reapplySize("lane");
+            }
             else laneLineView.clear();
         }
     }
@@ -222,6 +282,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
     public void updateTmcData(String tmcJson) {
         if (tmcProgressBar != null) {
             tmcProgressBar.updateTmcData(tmcJson);
+            reapplySize("tmc");
         }
     }
 

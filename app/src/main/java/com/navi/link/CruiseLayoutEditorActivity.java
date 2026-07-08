@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -71,7 +73,11 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
     private int themeColor = 0xFF4FC3F7;
     private final Map<String, float[]> editPositions = new HashMap<>();
     private final Map<String, Boolean> editEnabled = new HashMap<>();
+    private final Map<String, Float> editSizes = new HashMap<>();
     private float density;
+
+    // 上次点击时间，用于双击检测
+    private final java.util.Map<String, Long> lastClickTime = new HashMap<>();
 
     private static final Map<String, String> ICON_MAP = new HashMap<>();
     static {
@@ -130,6 +136,14 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         // 确保FloatingWindowManager已初始化，供LaneLineView等组件获取缩放值
         FloatingWindowManager.getInstance(this);
 
+        // 预填充所有要素的默认值（确保即使view为null也有数据）
+        for (String[] elem : ELEMENTS) {
+            String k = elem[0];
+            editPositions.put(k, new float[]{getDefaultX(k), getDefaultY(k)});
+            editEnabled.put(k, true);
+            editSizes.put(k, 1.0f);
+        }
+
         for (String[] elem : ELEMENTS) {
             String key = elem[0], vid = elem[2];
             int viewId = getResources().getIdentifier(vid, "id", getPackageName());
@@ -139,17 +153,24 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             boolean enabled = sp.getBoolean(prefPrefix + key + "_enabled", true);
             float xDp = sp.getFloat(prefPrefix + key + "_x", getDefaultX(key));
             float yDp = sp.getFloat(prefPrefix + key + "_y", getDefaultY(key));
+            float size = sp.getFloat(prefPrefix + key + "_size", 1.0f);
 
             editPositions.put(key, new float[]{xDp, yDp});
             editEnabled.put(key, enabled);
+            editSizes.put(key, size);
             applyElementPosition(view, xDp, yDp);
             view.setVisibility(enabled ? View.VISIBLE : View.GONE);
+            applyLocalScale(view, size);
             setupDragListener(view, key);
         }
+
+        adjustPreviewRoot();
 
         setPreviewData(cruiseView, isNavi);
         previewWindow.addView(cruiseView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+        // 预览数据更新后重新调整边框
+        adjustPreviewRoot();
 
         createToggles();
 
@@ -264,15 +285,27 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_MOVE: {
                     float[] d = (float[]) v.getTag();
                     if (d == null) return false;
-                    float nx = Math.max(0, Math.min(d[2] + (event.getRawX() - d[0]) / density, 900));
-                    float ny = Math.max(0, Math.min(d[3] + (event.getRawY() - d[1]) / density, 300));
+                    float nx = Math.max(0, Math.min(d[2] + (event.getRawX() - d[0]) / density, 2000));
+                    float ny = Math.max(0, Math.min(d[3] + (event.getRawY() - d[1]) / density, 2000));
                     editPositions.put(key, new float[]{nx, ny});
                     applyElementPosition(view, nx, ny);
+                    adjustPreviewRoot();
                     return true;
                 }
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     v.setAlpha(1f); v.setTag(null);
+                    // 双击检测
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        long now = System.currentTimeMillis();
+                        Long last = lastClickTime.get(key);
+                        if (last != null && now - last < 400) {
+                            showSizePopup(view, key);
+                            lastClickTime.put(key, 0L);
+                        } else {
+                            lastClickTime.put(key, now);
+                        }
+                    }
                     return true;
             }
             return false;
@@ -327,6 +360,72 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         }
     }
 
+    private void showSizePopup(View anchor, final String key) {
+        String label = key;
+        for (String[] e : ELEMENTS) {
+            if (e[0].equals(key)) { label = e[1]; break; }
+        }
+        final String fLabel = label;
+
+        // 创建弹窗内容
+        LinearLayout popupContent = new LinearLayout(this);
+        popupContent.setOrientation(LinearLayout.VERTICAL);
+        popupContent.setBackgroundColor(0xFF1E1E1E);
+        int pad = dpToPx(16);
+        popupContent.setPadding(pad, dpToPx(12), pad, dpToPx(12));
+
+        // 圆角背景
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0xFF1E1E1E); bg.setCornerRadius(dpToPx(12));
+        bg.setStroke(dpToPx(1), 0xFF444444);
+        popupContent.setBackground(bg);
+
+        TextView labelTv = new TextView(this);
+        labelTv.setText(fLabel);
+        labelTv.setTextColor(Color.WHITE);
+        labelTv.setTextSize(14);
+        popupContent.addView(labelTv);
+
+        final TextView sizeTv = new TextView(this);
+        sizeTv.setText("1.0x");
+        sizeTv.setTextColor(0xFF4FC3F7);
+        sizeTv.setTextSize(20);
+        popupContent.addView(sizeTv);
+
+        SeekBar seek = new SeekBar(this);
+        int cur = Math.round((editSizes.get(key) - 0.5f) / 1.5f * 100);
+        seek.setProgress(Math.max(0, Math.min(cur, 100)));
+        popupContent.addView(seek);
+
+        final View fAnchor = anchor;
+        final PopupWindow popup = new PopupWindow(popupContent,
+                dpToPx(200), dpToPx(120), true);
+        popup.setOutsideTouchable(true);
+
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                float s = 0.5f + p / 100f * 1.5f;
+                editSizes.put(key, s);
+                sizeTv.setText((int)(s * 10) / 10.0f + "x");
+                // 实时缩放预览
+                View v = findElementView(key);
+                if (v != null) {
+                    applyLocalScale(v, s);
+                    adjustPreviewRoot();
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar sb) {}
+            @Override public void onStopTrackingTouch(SeekBar sb) {}
+        });
+
+        // 弹窗显示在锚点下方
+        int[] loc = new int[2];
+        anchor.getLocationOnScreen(loc);
+        popup.showAtLocation(anchor, Gravity.NO_GRAVITY,
+                loc[0] + anchor.getWidth() / 2 - dpToPx(100),
+                loc[1] + anchor.getHeight() + dpToPx(4));
+    }
+
     private View findElementView(String key) {
         if (rootLayout == null) return null;
         for (String[] e : ELEMENTS) {
@@ -338,11 +437,43 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         return null;
     }
 
+    private void applyLocalScale(View view, float factor) {
+        if (view == null) return;
+        view.setScaleX(factor);
+        view.setScaleY(factor);
+    }
+
+    private void adjustPreviewRoot() {
+        if (rootLayout == null || !(rootLayout instanceof ViewGroup)) return;
+        ViewGroup vg = (ViewGroup) rootLayout;
+        int maxR = 0, maxB = 0;
+        for (int i = 0; i < vg.getChildCount(); i++) {
+            View c = vg.getChildAt(i);
+            if (c.getVisibility() != View.VISIBLE) continue;
+            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
+            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
+            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
+            float s = c.getScaleX();
+            int r = mlp.leftMargin + (int)(w * s);
+            int b = mlp.topMargin + (int)(h * s);
+            if (r > maxR) maxR = r;
+            if (b > maxB) maxB = b;
+        }
+        int pad = dpToPx(10);
+        ViewGroup.LayoutParams lp = vg.getLayoutParams();
+        if (lp != null) {
+            lp.width = maxR + pad;
+            lp.height = maxB + pad;
+            vg.setLayoutParams(lp);
+        }
+    }
+
     private void resetDefaults() {
         for (String[] e : ELEMENTS) {
             String key = e[0];
             editPositions.put(key, new float[]{getDefaultX(key), getDefaultY(key)});
             editEnabled.put(key, true);
+            editSizes.put(key, 1.0f);
             View v = findElementView(key);
             if (v != null) {
                 applyElementPosition(v, getDefaultX(key), getDefaultY(key));
@@ -365,11 +496,13 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             String key = e[0];
             float[] pos = editPositions.get(key);
             boolean en = editEnabled.get(key);
+            float sz = editSizes.get(key);
             editor.putFloat(prefPrefix + key + "_x", pos[0]);
             editor.putFloat(prefPrefix + key + "_y", pos[1]);
             editor.putBoolean(prefPrefix + key + "_enabled", en);
+            editor.putFloat(prefPrefix + key + "_size", sz);
         }
-        editor.apply();
+        editor.commit();
         FloatingWindowManager fwm = FloatingWindowManager.getInstance();
         if (fwm != null && fwm.isShowing()) fwm.refreshWindow();
         Toast.makeText(this, "布局已保存", Toast.LENGTH_SHORT).show();

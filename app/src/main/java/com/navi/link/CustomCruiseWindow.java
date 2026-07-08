@@ -2,6 +2,7 @@ package com.navi.link;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.animation.ObjectAnimator;
@@ -51,6 +52,33 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         applyElement(laneLineView, "lane");
         applyElement(llTrafficLightsContainer, "trafficlight");
         applyElement(cameraGroup, "camera");
+        adjustRootToFit();
+    }
+
+    private void adjustRootToFit() {
+        View root = floatingView.findViewById(R.id.root_layout);
+        if (!(root instanceof ViewGroup)) return;
+        ViewGroup vg = (ViewGroup) root;
+        int maxR = 0, maxB = 0;
+        for (int i = 0; i < vg.getChildCount(); i++) {
+            View c = vg.getChildAt(i);
+            if (c.getVisibility() != View.VISIBLE) continue;
+            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
+            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
+            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
+            float s = c.getScaleX();
+            int r = mlp.leftMargin + (int)(w * s);
+            int b = mlp.topMargin + (int)(h * s);
+            if (r > maxR) maxR = r;
+            if (b > maxB) maxB = b;
+        }
+        int pad = dpToPx(10);
+        ViewGroup.LayoutParams lp = vg.getLayoutParams();
+        if (lp != null) {
+            lp.width = maxR + pad;
+            lp.height = maxB + pad;
+            vg.setLayoutParams(lp);
+        }
     }
 
     private void applyElement(View view, String key) {
@@ -68,6 +96,26 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
             view.setLayoutParams(flp);
         }
         view.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        // 应用保存的大小缩放
+        applySavedSize(view, key);
+    }
+
+    private void applySavedSize(View view, String key) {
+        if (view == null) return;
+        float sz = sp.getFloat(PREFIX + key + "_size", 1.0f);
+        view.setScaleX(sz);
+        view.setScaleY(sz);
+    }
+
+    private void reapplySize(String key) {
+        View v = null;
+        if ("direction".equals(key)) v = tvCruiseDirection;
+        else if ("speed".equals(key)) v = floatingView.findViewById(R.id.custom_speed_group);
+        else if ("roadname".equals(key)) v = tvCruiseRoadName;
+        else if ("lane".equals(key)) v = laneLineView;
+        else if ("trafficlight".equals(key)) v = llTrafficLightsContainer;
+        else if ("camera".equals(key)) v = cameraGroup;
+        applySavedSize(v, key);
     }
 
     private float getDefaultX(String key) {
@@ -121,16 +169,19 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
             tvCruiseSpeed.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
         }
         if (tvCruiseUnit != null) tvCruiseUnit.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
+        reapplySize("speed");
         if (tvCruiseRoadName != null) {
             if (sp.getBoolean(PREFIX + "roadname_enabled", true)) {
                 tvCruiseRoadName.setText(roadName);
                 tvCruiseRoadName.setVisibility(View.VISIBLE);
+                reapplySize("roadname");
             } else tvCruiseRoadName.setVisibility(View.GONE);
         }
         if (tvCruiseDirection != null) {
             if (sp.getBoolean(PREFIX + "direction_enabled", true) && carDirection >= 0) {
                 tvCruiseDirection.setText(getDirectionText(carDirection));
                 tvCruiseDirection.setVisibility(View.VISIBLE);
+                reapplySize("direction");
             } else tvCruiseDirection.setVisibility(View.GONE);
         }
         if (cameraGroup != null) {
@@ -165,12 +216,16 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
             } catch (Exception ignored) {}
         }
         llTrafficLightsContainer.setVisibility(View.VISIBLE);
+        reapplySize("trafficlight");
     }
 
     @Override
     public void updateLaneLines(String driveWayJson) {
         if (laneLineView != null) {
-            if (sp.getBoolean(PREFIX + "lane_enabled", true)) laneLineView.updateLanes(driveWayJson);
+            if (sp.getBoolean(PREFIX + "lane_enabled", true)) {
+                laneLineView.updateLanes(driveWayJson);
+                reapplySize("lane");
+            }
             else laneLineView.clear();
         }
     }
