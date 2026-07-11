@@ -2808,6 +2808,41 @@
                                     android:layout_marginStart="4dp" />
                             </LinearLayout>
 
+                            <!-- Baidu API Key Row -->
+                            <LinearLayout
+                                android:id="@+id/ll_baidu_ak"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:paddingHorizontal="16dp"
+                                android:paddingVertical="12dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?android:attr/selectableItemBackground">
+                                <TextView
+                                    android:text="百度 API Key"
+                                    android:textSize="15sp"
+                                    android:textColor="#FFFFFFFF"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                                <TextView
+                                    android:id="@+id/tv_baidu_ak_status"
+                                    android:text="未设置"
+                                    android:textSize="14sp"
+                                    android:textColor="#FF888888"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text=" ›"
+                                    android:textSize="18sp"
+                                    android:textColor="#FF666666"
+                                    android:layout_marginStart="4dp" />
+                            </LinearLayout>
+
                             <View
                                 android:layout_width="match_parent"
                                 android:layout_height="1dp"

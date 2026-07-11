@@ -59,14 +59,22 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         View root = floatingView.findViewById(R.id.root_layout);
         if (!(root instanceof ViewGroup)) return;
         ViewGroup vg = (ViewGroup) root;
+        // 先强制测量获取实际尺寸
+        vg.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int maxR = 0, maxB = 0;
         for (int i = 0; i < vg.getChildCount(); i++) {
             View c = vg.getChildAt(i);
             if (c.getVisibility() != View.VISIBLE) continue;
+            // 确保子视图已测量
+            c.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
-            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
-            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
-            float s = c.getScaleX();
+            int w = Math.max(c.getMeasuredWidth(), c.getMinimumWidth());
+            int h = Math.max(c.getMeasuredHeight(), c.getMinimumHeight());
+            if (w <= 0) w = dpToPx(50);
+            if (h <= 0) h = dpToPx(30);
+            float s = Math.max(c.getScaleX(), 1.0f);
             int r = mlp.leftMargin + (int)(w * s);
             int b = mlp.topMargin + (int)(h * s);
             if (r > maxR) maxR = r;
@@ -189,6 +197,7 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
                 cameraGroup.updateCameraInfo(cameraType, cameraDist, cameraSpeed);
             else cameraGroup.setVisibility(View.GONE);
         }
+        adjustRootToFit();
     }
 
     @Override
@@ -217,6 +226,7 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         }
         llTrafficLightsContainer.setVisibility(View.VISIBLE);
         reapplySize("trafficlight");
+        adjustRootToFit();
     }
 
     @Override
@@ -225,6 +235,7 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
             if (sp.getBoolean(PREFIX + "lane_enabled", true)) {
                 laneLineView.updateLanes(driveWayJson);
                 reapplySize("lane");
+                adjustRootToFit();
             }
             else laneLineView.clear();
         }

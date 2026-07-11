@@ -12,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
@@ -68,6 +69,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
 
     private FrameLayout previewWindow;
     private LinearLayout toggleContainer;
+    private HorizontalScrollView toggleScroll;
     private View rootLayout;
 
     private int themeColor = 0xFF4FC3F7;
@@ -127,6 +129,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.tv_editor_title)).setText(titleText);
         previewWindow = findViewById(R.id.preview_window);
         toggleContainer = findViewById(R.id.toggle_container);
+        toggleScroll = findViewById(R.id.toggle_scroll);
 
         int layoutRes = isNavi ? R.layout.layout_floating_navi_custom : R.layout.layout_floating_cruise_custom;
         View cruiseView = LayoutInflater.from(this).inflate(layoutRes, null);
@@ -167,6 +170,14 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         adjustPreviewRoot();
 
         setPreviewData(cruiseView, isNavi);
+
+        // setPreviewData 会强制设置 VISIBLE，重新应用开关状态
+        for (String[] e : ELEMENTS) {
+            String k = e[0];
+            View v = findElementView(k);
+            if (v != null) v.setVisibility(editEnabled.get(k) ? View.VISIBLE : View.GONE);
+        }
+
         previewWindow.addView(cruiseView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT));
         // 预览数据更新后重新调整边框
@@ -280,6 +291,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                     float[] start = editPositions.get(key);
                     v.setTag(new float[]{event.getRawX(), event.getRawY(), start[0], start[1]});
                     v.setAlpha(0.7f);
+                    blinkToggle(key);
                     return true;
                 }
                 case MotionEvent.ACTION_MOVE: {
@@ -310,6 +322,36 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    /** 闪烁对应开关并滚动到可见位置 */
+    private void blinkToggle(String key) {
+        if (toggleContainer == null) return;
+        int idx = -1;
+        for (int i = 0; i < ELEMENTS.length; i++) {
+            if (ELEMENTS[i][0].equals(key)) { idx = i; break; }
+        }
+        if (idx < 0 || idx >= toggleContainer.getChildCount()) return;
+        final View chip = toggleContainer.getChildAt(idx);
+
+        chip.animate().alpha(0.3f).setDuration(150)
+                .withEndAction(() -> chip.animate().alpha(1f).setDuration(150)
+                .withEndAction(() -> chip.animate().alpha(0.3f).setDuration(150)
+                .withEndAction(() -> chip.animate().alpha(1f).setDuration(150)
+                .start()).start()).start());
+
+        if (toggleScroll != null) {
+            int[] loc = new int[2]; chip.getLocationOnScreen(loc);
+            int[] svLoc = new int[2]; toggleScroll.getLocationOnScreen(svLoc);
+            int offsetX = loc[0] - svLoc[0];
+            int tw = toggleScroll.getWidth();
+            int cw = chip.getWidth();
+            if (offsetX + cw > tw) {
+                toggleScroll.smoothScrollBy(offsetX + cw - tw + dpToPx(8), 0);
+            } else if (offsetX < 0) {
+                toggleScroll.smoothScrollBy(offsetX - dpToPx(8), 0);
+            }
+        }
     }
 
     private void createToggles() {
@@ -446,14 +488,21 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
     private void adjustPreviewRoot() {
         if (rootLayout == null || !(rootLayout instanceof ViewGroup)) return;
         ViewGroup vg = (ViewGroup) rootLayout;
+        // 强制测量所有子视图
+        vg.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int maxR = 0, maxB = 0;
         for (int i = 0; i < vg.getChildCount(); i++) {
             View c = vg.getChildAt(i);
             if (c.getVisibility() != View.VISIBLE) continue;
+            c.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
-            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
-            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
-            float s = c.getScaleX();
+            int w = Math.max(c.getMeasuredWidth(), c.getMinimumWidth());
+            int h = Math.max(c.getMeasuredHeight(), c.getMinimumHeight());
+            if (w <= 0) w = dpToPx(50);
+            if (h <= 0) h = dpToPx(30);
+            float s = Math.max(c.getScaleX(), 1.0f);
             int r = mlp.leftMargin + (int)(w * s);
             int b = mlp.topMargin + (int)(h * s);
             if (r > maxR) maxR = r;
