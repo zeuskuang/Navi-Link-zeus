@@ -18,6 +18,7 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     private TextView tvRoadNameMin;
     private TextView tvMinDirection;
     private TextView tvMinLightCount;
+    private TextView tvMinSpeedLimit;
     private View minDividerMin;
     private View naviMinDivider;
 
@@ -48,6 +49,7 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
         tvRoadNameMin = floatingView.findViewById(R.id.tv_road_name_min);
         tvMinDirection = floatingView.findViewById(R.id.tv_min_direction);
         tvMinLightCount = floatingView.findViewById(R.id.tv_min_light_count);
+        tvMinSpeedLimit = floatingView.findViewById(R.id.tv_min_speed_limit);
         minDividerMin = floatingView.findViewById(R.id.min_divider);
         naviMinDivider = floatingView.findViewById(R.id.navi_min_divider);
 
@@ -125,8 +127,9 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
                 }
                 tvMinSpeed.setAlpha(1f);
                 isOverspeedBlinking = false;
-                // 全透明 + 黑色主题：速度颜色跟随昼夜
-                if (themeColor == 0xFF1A1A1A && sp.getInt("background_mode", 0) == 2) {
+                // 全透明 + 黑色主题：速度颜色跟随昼夜（打开主题色调开关时则走主题色）
+                boolean accentNaviInfo = sp.getBoolean("minimal_accent_navi_info_enabled", false);
+                if (!accentNaviInfo && themeColor == 0xFF1A1A1A && sp.getInt("background_mode", 0) == 2) {
                     tvMinSpeed.setTextColor(isNightMode ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT);
                 } else {
                     // 恢复正常主题色
@@ -187,6 +190,20 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
                 tvMinLightCount.setVisibility(View.GONE);
             }
         }
+        if (tvMinSpeedLimit != null) {
+            boolean speedLimitEnabled = sp.getBoolean("minimal_speed_limit_enabled", false);
+            if (speedLimitEnabled) {
+                int limitVal = cameraSpeed > 0 ? cameraSpeed : limitedSpeed;
+                if (limitVal > 0) {
+                    tvMinSpeedLimit.setText(String.valueOf(limitVal));
+                    tvMinSpeedLimit.setVisibility(View.VISIBLE);
+                } else {
+                    tvMinSpeedLimit.setVisibility(View.GONE);
+                }
+            } else {
+                tvMinSpeedLimit.setVisibility(View.GONE);
+            }
+        }
         mCameraType = cameraType;
         mCameraSpeed = cameraSpeed;
         mCameraDist = cameraDist;
@@ -241,17 +258,18 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     public void applyThemeColor(int themeColor) {
         this.themeColor = themeColor;
         int accentColor = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+
+        boolean accentNaviInfo = sp.getBoolean("minimal_accent_navi_info_enabled", false);
         if (tvMinSpeed != null && !isOverspeedBlinking) {
-            // 全透明 + 黑色主题：速度颜色跟随昼夜
-            if (themeColor == 0xFF1A1A1A && sp.getInt("background_mode", 0) == 2) {
+            // 全透明 + 黑色主题：速度颜色跟随昼夜（打开主题色调开关时则走主题色）
+            if (!accentNaviInfo && themeColor == 0xFF1A1A1A && sp.getInt("background_mode", 0) == 2) {
                 boolean isNight = sp.getBoolean("is_night_mode", true);
                 tvMinSpeed.setTextColor(isNight ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT);
             } else {
                 tvMinSpeed.setTextColor(accentColor);
             }
         }
-        
-        boolean accentNaviInfo = sp.getBoolean("minimal_accent_navi_info_enabled", false);
+
         if (accentNaviInfo) {
             if (tvDistanceNumMin != null) tvDistanceNumMin.setTextColor(accentColor);
             if (tvDistanceUnitMin != null) tvDistanceUnitMin.setTextColor(accentColor);
@@ -266,8 +284,24 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
     @Override
     public void applyDayNightTextColors(boolean isNightMode) {
         this.isNightMode = isNightMode;
-        int textPrimary = isNightMode ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT;
-        int textSecondary = isNightMode ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT;
+        int textPrimary;
+        int textSecondary;
+
+        if (sp.getInt("background_mode", 0) == 2 && themeColor != 0xFF1A1A1A) {
+            // 全透明 + 非默认黑色主题：文字颜色跟随主题
+            int accentColor = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
+            if (accentColor == Color.WHITE) {
+                textPrimary = TEXT_PRIMARY_DARK;
+                textSecondary = TEXT_SECONDARY_DARK;
+            } else {
+                textPrimary = accentColor;
+                textSecondary = accentColor;
+            }
+        } else {
+            // 跟随高德昼夜
+            textPrimary = isNightMode ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT;
+            textSecondary = isNightMode ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT;
+        }
 
         if (tvDistanceNumMin != null) tvDistanceNumMin.setTextColor(textPrimary);
         if (tvDistanceUnitMin != null) tvDistanceUnitMin.setTextColor(textSecondary);

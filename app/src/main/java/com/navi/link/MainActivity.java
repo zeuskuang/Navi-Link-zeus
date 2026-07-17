@@ -62,13 +62,18 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int[] THEME_COLORS = {
             0xFF1A1A1A,  // 黑色
-            0xFF1199FF,  // 蓝
-            0xFF4FC3F7,  // 浅蓝
-            0xFFFF9100,  // 橙
+            0xFFE53935,  // 朱红
             0xFFFF4081,  // 粉红
-            0xFFAB47BC,  // 紫
             0xFFFF6D00,  // 深橙
+            0xFFFF9100,  // 橙
+            0xFFFFCA28,  // 琥珀
+            0xFF8D6E63,  // 棕色
             0xFF6DFF00,  // 青绿
+            0xFF00BFA5,  // 翡翠
+            0xFF4FC3F7,  // 浅蓝
+            0xFF1199FF,  // 蓝
+            0xFF5C6BC0,  // 靛蓝
+            0xFFAB47BC,  // 紫
     };
 
     private MaterialCardView cardMinimal;
@@ -105,8 +110,10 @@ public class MainActivity extends AppCompatActivity {
     private RadioButton rbStartAmap;
     private TextView tvStartAmapDesc;
     private SeekBar sbScale;
+    private SeekBar sbClusterScale;
     private View[] themeChips;
     private TextView tvScaleValue;
+    private TextView tvClusterScaleValue;
     private TextView tvStatus;
     private SwitchCompat cbCruiseEnabled;
     private TextView tvCruiseStatus;
@@ -114,6 +121,10 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbNormalLaneEnabled;
     private TextView tvNormalLaneStatus;
     private MaterialCardView cardNormalLaneToggle;
+
+    private SwitchCompat cbHideTurnIconBg;
+    private TextView tvHideTurnIconBgStatus;
+    private MaterialCardView cardHideTurnIconBgToggle;
     private SwitchCompat cbAvoidForegroundEnabled;
     private TextView tvAvoidForegroundStatus;
     private MaterialCardView cardAvoidForegroundToggle;
@@ -122,6 +133,11 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbCrossMapHideEnabled;
     private TextView tvCrossMapHideStatus;
     private MaterialCardView cardCrossMapHideToggle;
+
+    private boolean hideLaneLineBg = false;
+    private SwitchCompat cbHideLaneLineBgEnabled;
+    private TextView tvHideLaneLineBgStatus;
+    private MaterialCardView cardHideLaneLineBgToggle;
     private TextView tvSys;
     private TextView tvStyle;
     private TextView tvOperation;
@@ -189,6 +205,10 @@ public class MainActivity extends AppCompatActivity {
     private SwitchCompat cbMinimalAccentNaviInfoEnabled;
     private TextView tvMinimalAccentNaviInfoStatus;
 
+    private MaterialCardView cardMinimalSpeedLimitToggle;
+    private SwitchCompat cbMinimalSpeedLimitEnabled;
+    private TextView tvMinimalSpeedLimitStatus;
+
     private MaterialCardView cardAutoStartToggle;
     private SwitchCompat cbAutoStartEnabled;
     private TextView tvAutoStartStatus;
@@ -199,27 +219,47 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTrafficLightFillStatus;
     private boolean isTrafficLightFillEnabled = false;
 
+    // 红绿灯图标样式
+    private MaterialCardView[] cardTrafficLightStyle = new MaterialCardView[7];
+    private int trafficLightStyle = 0;
+
+    // 默认胶囊透明
+    private MaterialCardView cardTrafficLightCapsuleToggle;
+    private SwitchCompat cbTrafficLightCapsuleEnabled;
+    private TextView tvTrafficLightCapsuleStatus;
+    private boolean isTrafficLightCapsuleEnabled = true;
+
+    // 胶囊灯图显示
+    private MaterialCardView cardTrafficLightIconToggle;
+    private SwitchCompat cbTrafficLightIconEnabled;
+    private TextView tvTrafficLightIconStatus;
+    private boolean isTrafficLightIconEnabled = true;
+
     // Menu elements
     private MaterialCardView menuSystemAppearance;
     private MaterialCardView menuFeaturesAvoidance;
     private MaterialCardView menuLayoutNormal;
     private MaterialCardView menuLayoutMinimal;
+    private MaterialCardView menuTrafficLight;
 
     private View indicatorSystemAppearance;
     private View indicatorFeaturesAvoidance;
     private View indicatorLayoutNormal;
     private View indicatorLayoutMinimal;
+    private View indicatorTrafficLight;
 
     private TextView tvMenuSystemAppearance;
     private TextView tvMenuFeaturesAvoidance;
     private TextView tvMenuLayoutNormal;
     private TextView tvMenuLayoutMinimal;
+    private TextView tvMenuTrafficLight;
 
     // Right side panels
     private ScrollView panelSystemAppearance;
     private ScrollView panelFeaturesAvoidance;
     private ScrollView panelLayoutNormal;
     private ScrollView panelLayoutMinimal;
+    private ScrollView panelTrafficLight;
     private ScrollView panelAboutUs;
 
     private MaterialCardView menuAboutUs;
@@ -249,6 +289,7 @@ public class MainActivity extends AppCompatActivity {
     private int backgroundMode = 0; // 0=深色, 1=半透明, 2=全透明
     private boolean cruiseEnabled = true;
     private boolean normalLaneEnabled = false;
+    private boolean hideTurnIconBg = false;
     private boolean avoidForegroundEnabled = false;
     private boolean overspeedWarningEnabled = true;
     private int overspeedThreshold = 0;
@@ -273,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isMinimalLightCountEnabled = false;
     private boolean isMinimalAccentNaviInfoEnabled = false;
     private boolean isMinimalAutocenterEnabled = false;
+    private boolean isMinimalSpeedLimitEnabled = false;
 
     private int themeColor = 0xFF4FC3F7;
 
@@ -384,7 +426,9 @@ public class MainActivity extends AppCompatActivity {
         rbStartAmap = findViewById(R.id.rb_start_amap);
         tvStartAmapDesc = findViewById(R.id.tv_start_amap_desc);
         sbScale = findViewById(R.id.sb_scale);
+        sbClusterScale = findViewById(R.id.sb_cluster_scale);
         tvScaleValue = findViewById(R.id.tv_scale_value);
+        tvClusterScaleValue = findViewById(R.id.tv_cluster_scale_value);
         tvStatus = findViewById(R.id.tv_status);
         cbCruiseEnabled = findViewById(R.id.cb_cruise_enabled);
         tvCruiseStatus = findViewById(R.id.tv_cruise_status);
@@ -392,6 +436,10 @@ public class MainActivity extends AppCompatActivity {
         cbNormalLaneEnabled = findViewById(R.id.cb_normal_lane_enabled);
         tvNormalLaneStatus = findViewById(R.id.tv_normal_lane_status);
         cardNormalLaneToggle = findViewById(R.id.card_normal_lane_toggle);
+
+        cbHideTurnIconBg = findViewById(R.id.cb_hide_turn_icon_bg);
+        tvHideTurnIconBgStatus = findViewById(R.id.tv_hide_turn_icon_bg_status);
+        cardHideTurnIconBgToggle = findViewById(R.id.card_hide_turn_icon_bg_toggle);
         cbAvoidForegroundEnabled = findViewById(R.id.cb_avoid_foreground_enabled);
         tvAvoidForegroundStatus = findViewById(R.id.tv_avoid_foreground_status);
         cardAvoidForegroundToggle = findViewById(R.id.card_avoid_foreground_toggle);
@@ -399,6 +447,10 @@ public class MainActivity extends AppCompatActivity {
         cbCrossMapHideEnabled = findViewById(R.id.cb_cross_map_hide_enabled);
         tvCrossMapHideStatus = findViewById(R.id.tv_cross_map_hide_status);
         cardCrossMapHideToggle = findViewById(R.id.card_cross_map_hide_toggle);
+
+        cbHideLaneLineBgEnabled = findViewById(R.id.cb_hide_lane_line_bg_enabled);
+        tvHideLaneLineBgStatus = findViewById(R.id.tv_hide_lane_line_bg_status);
+        cardHideLaneLineBgToggle = findViewById(R.id.card_hide_lane_line_bg_toggle);
         cbOverspeedWarningEnabled = findViewById(R.id.cb_overspeed_warning_enabled);
         tvOverspeedWarningStatus = findViewById(R.id.tv_overspeed_warning_status);
         cardOverspeedWarningToggle = findViewById(R.id.card_overspeed_warning_toggle);
@@ -430,6 +482,19 @@ public class MainActivity extends AppCompatActivity {
         cardTrafficLightFillToggle = findViewById(R.id.card_traffic_light_fill_toggle);
         cbTrafficLightFillEnabled = findViewById(R.id.cb_traffic_light_fill_enabled);
         tvTrafficLightFillStatus = findViewById(R.id.tv_traffic_light_fill_status);
+        cardTrafficLightCapsuleToggle = findViewById(R.id.card_traffic_light_capsule_toggle);
+        cbTrafficLightCapsuleEnabled = findViewById(R.id.cb_traffic_light_capsule_enabled);
+        tvTrafficLightCapsuleStatus = findViewById(R.id.tv_traffic_light_capsule_status);
+        cardTrafficLightIconToggle = findViewById(R.id.card_traffic_light_icon_toggle);
+        cbTrafficLightIconEnabled = findViewById(R.id.cb_traffic_light_icon_enabled);
+        tvTrafficLightIconStatus = findViewById(R.id.tv_traffic_light_icon_status);
+        cardTrafficLightStyle[0] = findViewById(R.id.card_traffic_light_style_0);
+        cardTrafficLightStyle[1] = findViewById(R.id.card_traffic_light_style_1);
+        cardTrafficLightStyle[2] = findViewById(R.id.card_traffic_light_style_2);
+        cardTrafficLightStyle[3] = findViewById(R.id.card_traffic_light_style_3);
+        cardTrafficLightStyle[4] = findViewById(R.id.card_traffic_light_style_4);
+        cardTrafficLightStyle[5] = findViewById(R.id.card_traffic_light_style_5);
+        cardTrafficLightStyle[6] = findViewById(R.id.card_traffic_light_style_6);
         llThemeColors = findViewById(R.id.ll_theme_colors);
         tvSys = findViewById(R.id.tv_sys);
         tvStyle = findViewById(R.id.tv_style);
@@ -459,22 +524,26 @@ public class MainActivity extends AppCompatActivity {
         menuFeaturesAvoidance = findViewById(R.id.menu_features_avoidance);
         menuLayoutNormal = findViewById(R.id.menu_layout_normal);
         menuLayoutMinimal = findViewById(R.id.menu_layout_minimal);
+        menuTrafficLight = findViewById(R.id.menu_traffic_light);
 
         indicatorSystemAppearance = findViewById(R.id.indicator_system_appearance);
         indicatorFeaturesAvoidance = findViewById(R.id.indicator_features_avoidance);
         indicatorLayoutNormal = findViewById(R.id.indicator_layout_normal);
         indicatorLayoutMinimal = findViewById(R.id.indicator_layout_minimal);
+        indicatorTrafficLight = findViewById(R.id.indicator_traffic_light);
 
         tvMenuSystemAppearance = findViewById(R.id.tv_menu_system_appearance);
         tvMenuFeaturesAvoidance = findViewById(R.id.tv_menu_features_avoidance);
         tvMenuLayoutNormal = findViewById(R.id.tv_menu_layout_normal);
         tvMenuLayoutMinimal = findViewById(R.id.tv_menu_layout_minimal);
+        tvMenuTrafficLight = findViewById(R.id.tv_menu_traffic_light);
 
         // Bind right side panel scroll views
         panelSystemAppearance = findViewById(R.id.panel_system_appearance);
         panelFeaturesAvoidance = findViewById(R.id.panel_features_avoidance);
         panelLayoutNormal = findViewById(R.id.panel_layout_normal);
         panelLayoutMinimal = findViewById(R.id.panel_layout_minimal);
+        panelTrafficLight = findViewById(R.id.panel_traffic_light);
         panelAboutUs = findViewById(R.id.panel_about_us);
 
         menuAboutUs = findViewById(R.id.menu_about_us);
@@ -534,6 +603,10 @@ public class MainActivity extends AppCompatActivity {
         cardMinimalAccentNaviInfoToggle = findViewById(R.id.card_minimal_accent_navi_info_toggle);
         cbMinimalAccentNaviInfoEnabled = findViewById(R.id.cb_minimal_accent_navi_info_enabled);
         tvMinimalAccentNaviInfoStatus = findViewById(R.id.tv_minimal_accent_navi_info_status);
+
+        cardMinimalSpeedLimitToggle = findViewById(R.id.card_minimal_speed_limit_toggle);
+        cbMinimalSpeedLimitEnabled = findViewById(R.id.cb_minimal_speed_limit_enabled);
+        tvMinimalSpeedLimitStatus = findViewById(R.id.tv_minimal_speed_limit_status);
     }
 
     private void loadPreferences() {
@@ -553,6 +626,7 @@ public class MainActivity extends AppCompatActivity {
         backgroundMode = sp.getInt("background_mode", 0);
         cruiseEnabled = sp.getBoolean("cruise_enabled", true);
         normalLaneEnabled = sp.getBoolean("normal_navi_lane_enabled", false);
+        hideTurnIconBg = sp.getBoolean("hide_turn_icon_bg", false);
         avoidForegroundEnabled = sp.getBoolean("hide_on_amap_foreground", false);
         overspeedWarningEnabled = sp.getBoolean("overspeed_warning_enabled", true);
         overspeedThreshold = sp.getInt("overspeed_threshold", 0);
@@ -564,6 +638,7 @@ public class MainActivity extends AppCompatActivity {
         isMinimalLightCountEnabled = sp.getBoolean("minimal_light_count_enabled", false);
         isMinimalAccentNaviInfoEnabled = sp.getBoolean("minimal_accent_navi_info_enabled", false);
         isMinimalAutocenterEnabled = sp.getBoolean("minimal_autocenter_enabled", false);
+        isMinimalSpeedLimitEnabled = sp.getBoolean("minimal_speed_limit_enabled", false);
         clusterMirrorEnabled = sp.getBoolean("cluster_mirror_enabled", false);
         clusterDisplayId = sp.getInt("cluster_display_id", -1);
         hideMainWhenClusterActive = sp.getBoolean("hide_main_when_cluster_active", false);
@@ -573,7 +648,11 @@ public class MainActivity extends AppCompatActivity {
         normalCruiseInfoEnabled = sp.getBoolean("normal_cruise_info_enabled", true);
         minimalLaneEnabled = sp.getBoolean("minimal_navi_lane_enabled", false);
         isTrafficLightFillEnabled = sp.getBoolean("traffic_light_fill_enabled", false);
+        isTrafficLightCapsuleEnabled = sp.getBoolean("traffic_light_capsule_enabled", true);
+        isTrafficLightIconEnabled = sp.getBoolean("traffic_light_icon_enabled", true);
+        trafficLightStyle = sp.getInt("traffic_light_style", 0);
         crossMapHideEnabled = sp.getBoolean("hide_on_cross_map", false);
+        hideLaneLineBg = sp.getBoolean("hide_lane_line_bg", false);
  
         updateSeekBarToCurrentScale();
         
@@ -582,6 +661,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvNormalLaneStatus != null) {
             tvNormalLaneStatus.setText(normalLaneEnabled ? "车道线已启用" : "车道线已禁用");
+        }
+        if (cbHideTurnIconBg != null) {
+            cbHideTurnIconBg.setChecked(hideTurnIconBg);
+        }
+        if (tvHideTurnIconBgStatus != null) {
+            tvHideTurnIconBgStatus.setText(hideTurnIconBg ? "背景已隐藏" : "背景已显示");
         }
         if (cbAvoidForegroundEnabled != null) {
             cbAvoidForegroundEnabled.setChecked(avoidForegroundEnabled);
@@ -594,6 +679,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvCrossMapHideStatus != null) {
             tvCrossMapHideStatus.setText(crossMapHideEnabled ? "路口放大图时隐藏悬浮窗" : "路口放大图时正常显示浮窗");
+        }
+        if (cbHideLaneLineBgEnabled != null) {
+            cbHideLaneLineBgEnabled.setChecked(hideLaneLineBg);
+        }
+        if (tvHideLaneLineBgStatus != null) {
+            tvHideLaneLineBgStatus.setText(hideLaneLineBg ? "背景已隐藏" : "背景已显示");
         }
         if (cbOverspeedWarningEnabled != null) {
             cbOverspeedWarningEnabled.setChecked(overspeedWarningEnabled);
@@ -646,6 +737,12 @@ public class MainActivity extends AppCompatActivity {
         if (tvMinimalAccentNaviInfoStatus != null) {
             tvMinimalAccentNaviInfoStatus.setText(isMinimalAccentNaviInfoEnabled ? "已启用" : "已禁用");
         }
+        if (cbMinimalSpeedLimitEnabled != null) {
+            cbMinimalSpeedLimitEnabled.setChecked(isMinimalSpeedLimitEnabled);
+        }
+        if (tvMinimalSpeedLimitStatus != null) {
+            tvMinimalSpeedLimitStatus.setText(isMinimalSpeedLimitEnabled ? "限速显示已启用" : "限速显示已禁用");
+        }
         if (cbClusterMirrorEnabled != null) {
             cbClusterMirrorEnabled.setChecked(clusterMirrorEnabled);
         }
@@ -663,6 +760,20 @@ public class MainActivity extends AppCompatActivity {
         }
         if (tvTrafficLightFillStatus != null) {
             tvTrafficLightFillStatus.setText(isTrafficLightFillEnabled ? "红绿灯胶囊背景已填充灯色" : "深蓝胶囊背景");
+        }
+
+        if (cbTrafficLightCapsuleEnabled != null) {
+            cbTrafficLightCapsuleEnabled.setChecked(isTrafficLightCapsuleEnabled);
+        }
+        if (tvTrafficLightCapsuleStatus != null) {
+            tvTrafficLightCapsuleStatus.setText(isTrafficLightCapsuleEnabled ? "显示胶囊深蓝色背景" : "隐藏胶囊背景");
+        }
+
+        if (cbTrafficLightIconEnabled != null) {
+            cbTrafficLightIconEnabled.setChecked(isTrafficLightIconEnabled);
+        }
+        if (tvTrafficLightIconStatus != null) {
+            tvTrafficLightIconStatus.setText(isTrafficLightIconEnabled ? "胶囊灯图图标已显示" : "胶囊灯图图标已隐藏");
         }
         if (btnAdjustClusterPos != null) {
             btnAdjustClusterPos.setVisibility(clusterMirrorEnabled ? View.VISIBLE : View.GONE);
@@ -877,6 +988,26 @@ public class MainActivity extends AppCompatActivity {
         cardBgTransparent.setStrokeColor(backgroundMode == 2 ? accentColor : Color.parseColor("#444444"));
     }
 
+    private void selectTrafficLightStyle(int style) {
+        if (trafficLightStyle == style) return;
+        trafficLightStyle = style;
+        updateTrafficLightStyleSelection();
+        savePreferences();
+        FloatingWindowManager manager = FloatingWindowManager.getInstance();
+        if (manager != null) {
+            manager.refreshWindow();
+        }
+    }
+
+    private void updateTrafficLightStyleSelection() {
+        int accentColor = getAccentColor();
+        for (int i = 0; i < cardTrafficLightStyle.length; i++) {
+            if (cardTrafficLightStyle[i] != null) {
+                cardTrafficLightStyle[i].setStrokeColor(i == trafficLightStyle ? accentColor : Color.parseColor("#444444"));
+            }
+        }
+    }
+
     private void savePreferences() {
         SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
         editor.putBoolean(KEY_IS_MINIMAL, isMinimalStyle)
@@ -889,6 +1020,8 @@ public class MainActivity extends AppCompatActivity {
                 .putInt("background_mode", backgroundMode)
                 .putBoolean("cruise_enabled", cruiseEnabled)
                 .putBoolean("normal_navi_lane_enabled", normalLaneEnabled)
+                .putBoolean("hide_turn_icon_bg", hideTurnIconBg)
+                .putBoolean("hide_lane_line_bg", hideLaneLineBg)
                 .putBoolean("hide_on_amap_foreground", avoidForegroundEnabled)
                 .putBoolean("hide_on_cross_map", crossMapHideEnabled)
                 .putBoolean("overspeed_warning_enabled", overspeedWarningEnabled)
@@ -898,6 +1031,9 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean("hide_main_when_cluster_active", hideMainWhenClusterActive)
                 .putBoolean("auto_start", autoStartEnabled)
                 .putBoolean("traffic_light_fill_enabled", isTrafficLightFillEnabled)
+                .putBoolean("traffic_light_capsule_enabled", isTrafficLightCapsuleEnabled)
+                .putBoolean("traffic_light_icon_enabled", isTrafficLightIconEnabled)
+                .putInt("traffic_light_style", trafficLightStyle)
                 .putBoolean("normal_navi_tmc_enabled", normalTmcEnabled)
                 .putBoolean("normal_navi_bottom_info_enabled", normalBottomInfoEnabled)
                 .putBoolean("normal_cruise_info_enabled", normalCruiseInfoEnabled)
@@ -910,6 +1046,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean("minimal_light_count_enabled", isMinimalLightCountEnabled);
         editor.putBoolean("minimal_accent_navi_info_enabled", isMinimalAccentNaviInfoEnabled);
         editor.putBoolean("minimal_autocenter_enabled", isMinimalAutocenterEnabled);
+        editor.putBoolean("minimal_speed_limit_enabled", isMinimalSpeedLimitEnabled);
         editor.apply();
     }
 
@@ -987,6 +1124,7 @@ public class MainActivity extends AppCompatActivity {
         updateStyleSelection();
         updateCruiseStyleSelection();
         updateBackgroundModeSelection();
+        updateTrafficLightStyleSelection();
 
         // 单选按钮（RadioButton）的着色
         if (rbStartAmap != null) {
@@ -1011,6 +1149,8 @@ public class MainActivity extends AppCompatActivity {
         // 更新开关（SwitchCompat）的主题颜色
         updateSwitchTheme(cbCruiseEnabled, accentColor);
         updateSwitchTheme(cbNormalLaneEnabled, accentColor);
+        updateSwitchTheme(cbHideTurnIconBg, accentColor);
+        updateSwitchTheme(cbHideLaneLineBgEnabled, accentColor);
         updateSwitchTheme(cbAvoidForegroundEnabled, accentColor);
         updateSwitchTheme(cbCrossMapHideEnabled, accentColor);
         updateSwitchTheme(cbOverspeedWarningEnabled, accentColor);
@@ -1020,6 +1160,8 @@ public class MainActivity extends AppCompatActivity {
         updateSwitchTheme(cbHideMainWhenClusterActive, accentColor);
         updateSwitchTheme(cbAutoStartEnabled, accentColor);
         updateSwitchTheme(cbTrafficLightFillEnabled, accentColor);
+        updateSwitchTheme(cbTrafficLightCapsuleEnabled, accentColor);
+        updateSwitchTheme(cbTrafficLightIconEnabled, accentColor);
         updateSwitchTheme(cbNormalTmcEnabled, accentColor);
         updateSwitchTheme(cbNormalBottomInfoEnabled, accentColor);
         updateSwitchTheme(cbNormalCruiseInfoEnabled, accentColor);
@@ -1030,6 +1172,7 @@ public class MainActivity extends AppCompatActivity {
         updateSwitchTheme(cbMinimalSpeedEnabled, accentColor);
         updateSwitchTheme(cbMinimalLightCountEnabled, accentColor);
         updateSwitchTheme(cbMinimalAccentNaviInfoEnabled, accentColor);
+        updateSwitchTheme(cbMinimalSpeedLimitEnabled, accentColor);
  
         // 更新 SeekBar 与文本颜色
         if (sbScale.getProgressDrawable() != null) {
@@ -1045,6 +1188,24 @@ public class MainActivity extends AppCompatActivity {
             sbScale.setThumb(thumbDrawable);
         }
         tvScaleValue.setTextColor(accentColor);
+
+        if (sbClusterScale != null) {
+            if (sbClusterScale.getProgressDrawable() != null) {
+                android.graphics.drawable.Drawable progressDrawable =
+                        DrawableCompat.wrap(sbClusterScale.getProgressDrawable().mutate());
+                DrawableCompat.setTint(progressDrawable, accentColor);
+                sbClusterScale.setProgressDrawable(progressDrawable);
+            }
+            if (sbClusterScale.getThumb() != null) {
+                android.graphics.drawable.Drawable thumbDrawable =
+                        DrawableCompat.wrap(sbClusterScale.getThumb().mutate());
+                DrawableCompat.setTintList(thumbDrawable, accentColorStateList);
+                sbClusterScale.setThumb(thumbDrawable);
+            }
+        }
+        if (tvClusterScaleValue != null) {
+            tvClusterScaleValue.setTextColor(accentColor);
+        }
 
         tvStyle.setTextColor(accentColor);
         tvSys.setTextColor(accentColor);
@@ -1159,6 +1320,12 @@ public class MainActivity extends AppCompatActivity {
         cardBgDark.setOnClickListener(v -> selectBackgroundMode(0));
         cardBgSemi.setOnClickListener(v -> selectBackgroundMode(1));
         cardBgTransparent.setOnClickListener(v -> selectBackgroundMode(2));
+        for (int i = 0; i < cardTrafficLightStyle.length; i++) {
+            final int style = i;
+            if (cardTrafficLightStyle[i] != null) {
+                cardTrafficLightStyle[i].setOnClickListener(v -> selectTrafficLightStyle(style));
+            }
+        }
         MaterialCardView btnHomeApp = findViewById(R.id.btn_home_app);
         if (btnHomeApp != null) {
             btnHomeApp.setOnClickListener(v -> moveTaskToBack(true));
@@ -1206,6 +1373,27 @@ public class MainActivity extends AppCompatActivity {
             cardNormalLaneToggle.setOnClickListener(v -> cbNormalLaneEnabled.toggle());
         }
 
+        cbHideTurnIconBg.setChecked(hideTurnIconBg);
+        if (tvHideTurnIconBgStatus != null) {
+            tvHideTurnIconBgStatus.setText(hideTurnIconBg ? "背景已隐藏" : "背景已显示");
+        }
+        CompoundButton.OnCheckedChangeListener hideTurnIconBgListener = (buttonView, isChecked) -> {
+            hideTurnIconBg = isChecked;
+            savePreferences();
+            if (tvHideTurnIconBgStatus != null) {
+                tvHideTurnIconBgStatus.setText(isChecked ? "背景已隐藏" : "背景已显示");
+            }
+            // 立即刷新悬浮窗
+            FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+            if (fwm != null) {
+                fwm.refreshWindow();
+            }
+        };
+        cbHideTurnIconBg.setOnCheckedChangeListener(hideTurnIconBgListener);
+        if (cardHideTurnIconBgToggle != null) {
+            cardHideTurnIconBgToggle.setOnClickListener(v -> cbHideTurnIconBg.toggle());
+        }
+
         cbAvoidForegroundEnabled.setChecked(avoidForegroundEnabled);
         if (tvAvoidForegroundStatus != null) {
             tvAvoidForegroundStatus.setText(avoidForegroundEnabled ? "高德前台时隐藏悬浮窗" : "前台正常显示浮窗");
@@ -1246,6 +1434,27 @@ public class MainActivity extends AppCompatActivity {
         cbCrossMapHideEnabled.setOnCheckedChangeListener(crossMapHideListener);
         if (cardCrossMapHideToggle != null) {
             cardCrossMapHideToggle.setOnClickListener(v -> cbCrossMapHideEnabled.toggle());
+        }
+
+        cbHideLaneLineBgEnabled.setChecked(hideLaneLineBg);
+        if (tvHideLaneLineBgStatus != null) {
+            tvHideLaneLineBgStatus.setText(hideLaneLineBg ? "背景已隐藏" : "背景已显示");
+        }
+        CompoundButton.OnCheckedChangeListener hideLaneLineBgListener = (buttonView, isChecked) -> {
+            hideLaneLineBg = isChecked;
+            savePreferences();
+            if (tvHideLaneLineBgStatus != null) {
+                tvHideLaneLineBgStatus.setText(isChecked ? "背景已隐藏" : "背景已显示");
+            }
+            // 立即刷新悬浮窗
+            FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+            if (fwm != null) {
+                fwm.refreshWindow();
+            }
+        };
+        cbHideLaneLineBgEnabled.setOnCheckedChangeListener(hideLaneLineBgListener);
+        if (cardHideLaneLineBgToggle != null) {
+            cardHideLaneLineBgToggle.setOnClickListener(v -> cbHideLaneLineBgEnabled.toggle());
         }
 
         cbOverspeedWarningEnabled.setChecked(overspeedWarningEnabled);
@@ -1392,6 +1601,50 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        // 默认胶囊透明开关
+        if (cbTrafficLightCapsuleEnabled != null) {
+            cbTrafficLightCapsuleEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                isTrafficLightCapsuleEnabled = isChecked;
+                savePreferences();
+                if (tvTrafficLightCapsuleStatus != null) {
+                    tvTrafficLightCapsuleStatus.setText(isChecked ? "显示胶囊深蓝色背景" : "隐藏胶囊背景");
+                }
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.refreshWindow();
+                }
+            });
+        }
+        if (cardTrafficLightCapsuleToggle != null) {
+            cardTrafficLightCapsuleToggle.setOnClickListener(v -> {
+                if (cbTrafficLightCapsuleEnabled != null) {
+                    cbTrafficLightCapsuleEnabled.toggle();
+                }
+            });
+        }
+
+        // 胶囊灯图显示开关
+        if (cbTrafficLightIconEnabled != null) {
+            cbTrafficLightIconEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                isTrafficLightIconEnabled = isChecked;
+                savePreferences();
+                if (tvTrafficLightIconStatus != null) {
+                    tvTrafficLightIconStatus.setText(isChecked ? "胶囊灯图图标已显示" : "胶囊灯图图标已隐藏");
+                }
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.refreshWindow();
+                }
+            });
+        }
+        if (cardTrafficLightIconToggle != null) {
+            cardTrafficLightIconToggle.setOnClickListener(v -> {
+                if (cbTrafficLightIconEnabled != null) {
+                    cbTrafficLightIconEnabled.toggle();
+                }
+            });
+        }
+
         if (cardClusterDisplaySelect != null) {
             cardClusterDisplaySelect.setOnClickListener(v -> showClusterDisplaySelectionDialog());
         }
@@ -1428,6 +1681,31 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        if (sbClusterScale != null) {
+            sbClusterScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                }
+
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    float currentScale = (progress / 15.0f) * 1.5f + 0.5f;
+                    if (tvClusterScaleValue != null) {
+                        tvClusterScaleValue.setText(String.format("%.1fx", currentScale));
+                    }
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    float newScale = (seekBar.getProgress() / 15.0f) * 1.5f + 0.5f;
+                    FloatingWindowManager manager = FloatingWindowManager.getInstance();
+                    if (manager != null) {
+                        manager.setClusterScale(newScale);
+                    }
+                }
+            });
+        }
 
         if (cbNormalTmcEnabled != null) {
             cbNormalTmcEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -1639,6 +1917,27 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        if (cbMinimalSpeedLimitEnabled != null) {
+            cbMinimalSpeedLimitEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                isMinimalSpeedLimitEnabled = isChecked;
+                savePreferences();
+                if (tvMinimalSpeedLimitStatus != null) {
+                    tvMinimalSpeedLimitStatus.setText(isChecked ? "限速显示已启用" : "限速显示已禁用");
+                }
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.refreshWindow();
+                }
+            });
+        }
+        if (cardMinimalSpeedLimitToggle != null) {
+            cardMinimalSpeedLimitToggle.setOnClickListener(v -> {
+                if (cbMinimalSpeedLimitEnabled != null) {
+                    cbMinimalSpeedLimitEnabled.toggle();
+                }
+            });
+        }
+
         if (cbMinimalAutocenterEnabled != null) {
             cbMinimalAutocenterEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 isMinimalAutocenterEnabled = isChecked;
@@ -1670,8 +1969,11 @@ public class MainActivity extends AppCompatActivity {
         if (menuLayoutMinimal != null) {
             menuLayoutMinimal.setOnClickListener(v -> switchMenu(3));
         }
+        if (menuTrafficLight != null) {
+            menuTrafficLight.setOnClickListener(v -> switchMenu(4));
+        }
         if (menuAboutUs != null) {
-            menuAboutUs.setOnClickListener(v -> switchMenu(4));
+            menuAboutUs.setOnClickListener(v -> switchMenu(5));
         }
 
         if (tvAboutQqGroup != null) {
@@ -1707,28 +2009,32 @@ public class MainActivity extends AppCompatActivity {
         if (panelFeaturesAvoidance != null) panelFeaturesAvoidance.setVisibility(index == 1 ? View.VISIBLE : View.GONE);
         if (panelLayoutNormal != null) panelLayoutNormal.setVisibility(index == 2 ? View.VISIBLE : View.GONE);
         if (panelLayoutMinimal != null) panelLayoutMinimal.setVisibility(index == 3 ? View.VISIBLE : View.GONE);
-        if (panelAboutUs != null) panelAboutUs.setVisibility(index == 4 ? View.VISIBLE : View.GONE);
+        if (panelTrafficLight != null) panelTrafficLight.setVisibility(index == 4 ? View.VISIBLE : View.GONE);
+        if (panelAboutUs != null) panelAboutUs.setVisibility(index == 5 ? View.VISIBLE : View.GONE);
 
         // 2. Indicators visibility
         if (indicatorSystemAppearance != null) indicatorSystemAppearance.setVisibility(index == 0 ? View.VISIBLE : View.INVISIBLE);
         if (indicatorFeaturesAvoidance != null) indicatorFeaturesAvoidance.setVisibility(index == 1 ? View.VISIBLE : View.INVISIBLE);
         if (indicatorLayoutNormal != null) indicatorLayoutNormal.setVisibility(index == 2 ? View.VISIBLE : View.INVISIBLE);
         if (indicatorLayoutMinimal != null) indicatorLayoutMinimal.setVisibility(index == 3 ? View.VISIBLE : View.INVISIBLE);
-        if (indicatorAboutUs != null) indicatorAboutUs.setVisibility(index == 4 ? View.VISIBLE : View.INVISIBLE);
+        if (indicatorTrafficLight != null) indicatorTrafficLight.setVisibility(index == 4 ? View.VISIBLE : View.INVISIBLE);
+        if (indicatorAboutUs != null) indicatorAboutUs.setVisibility(index == 5 ? View.VISIBLE : View.INVISIBLE);
 
         // 3. Menu card background colors (selected gets #FF262626, others transparent)
         if (menuSystemAppearance != null) menuSystemAppearance.setCardBackgroundColor(ColorStateList.valueOf(index == 0 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
         if (menuFeaturesAvoidance != null) menuFeaturesAvoidance.setCardBackgroundColor(ColorStateList.valueOf(index == 1 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
         if (menuLayoutNormal != null) menuLayoutNormal.setCardBackgroundColor(ColorStateList.valueOf(index == 2 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
         if (menuLayoutMinimal != null) menuLayoutMinimal.setCardBackgroundColor(ColorStateList.valueOf(index == 3 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
-        if (menuAboutUs != null) menuAboutUs.setCardBackgroundColor(ColorStateList.valueOf(index == 4 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
+        if (menuTrafficLight != null) menuTrafficLight.setCardBackgroundColor(ColorStateList.valueOf(index == 4 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
+        if (menuAboutUs != null) menuAboutUs.setCardBackgroundColor(ColorStateList.valueOf(index == 5 ? Color.parseColor("#FF262626") : Color.TRANSPARENT));
 
         // 4. Menu text colors (selected gets #FFFFFFFF, others #FF888888)
         if (tvMenuSystemAppearance != null) tvMenuSystemAppearance.setTextColor(index == 0 ? Color.WHITE : Color.parseColor("#FF888888"));
         if (tvMenuFeaturesAvoidance != null) tvMenuFeaturesAvoidance.setTextColor(index == 1 ? Color.WHITE : Color.parseColor("#FF888888"));
         if (tvMenuLayoutNormal != null) tvMenuLayoutNormal.setTextColor(index == 2 ? Color.WHITE : Color.parseColor("#FF888888"));
         if (tvMenuLayoutMinimal != null) tvMenuLayoutMinimal.setTextColor(index == 3 ? Color.WHITE : Color.parseColor("#FF888888"));
-        if (tvMenuAboutUs != null) tvMenuAboutUs.setTextColor(index == 4 ? Color.WHITE : Color.parseColor("#FF888888"));
+        if (tvMenuTrafficLight != null) tvMenuTrafficLight.setTextColor(index == 4 ? Color.WHITE : Color.parseColor("#FF888888"));
+        if (tvMenuAboutUs != null) tvMenuAboutUs.setTextColor(index == 5 ? Color.WHITE : Color.parseColor("#FF888888"));
     }
 
     private void checkPermissionAndStart() {
@@ -1802,6 +2108,15 @@ public class MainActivity extends AppCompatActivity {
 
         sbScale.setProgress((int) (((s - 0.5f) / 1.5f) * 15));
         tvScaleValue.setText(String.format("%.1fx", s));
+
+        // 更新副屏缩放 Seekbar
+        float cs = sp.getFloat("scale_cluster", 1.0f);
+        if (sbClusterScale != null) {
+            sbClusterScale.setProgress((int) (((cs - 0.5f) / 1.5f) * 15));
+        }
+        if (tvClusterScaleValue != null) {
+            tvClusterScaleValue.setText(String.format("%.1fx", cs));
+        }
     }
 
     private void updateStatusText() {
