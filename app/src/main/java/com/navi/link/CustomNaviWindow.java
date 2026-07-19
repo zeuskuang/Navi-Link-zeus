@@ -21,7 +21,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
     private TrafficLightView trafficLightView;
     private CameraWarningView cameraGroup;
     private TmcProgressBar tmcProgressBar;
-
+    private SpeedometerView speedGauge;
     private int themeColor = 0xFF4FC3F7;
     private boolean isOverspeedBlinking = false;
     private int mCameraType, mCameraDist, mCameraSpeed;
@@ -46,6 +46,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         trafficLightView = floatingView.findViewById(R.id.custom_navi_trafficlight);
         cameraGroup = floatingView.findViewById(R.id.custom_navi_camera);
         tmcProgressBar = floatingView.findViewById(R.id.custom_navi_tmc);
+        speedGauge = floatingView.findViewById(R.id.navi_speed_gauge);
 
         if (laneLineView != null) laneLineView.setSimpleMode(true);
         themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
@@ -66,23 +67,56 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         applyElement(trafficLightView, "trafficlight");
         applyElement(cameraGroup, "camera");
         applyElement(tmcProgressBar, "tmc");
+        // 速度样式最后应用，覆盖 applyElement 设置的显隐
+        applySpeedStyle();
         adjustRootToFit();
+    }
+
+    /** 根据 speed_style 偏好切换数字/仪表速度 */
+    private void applySpeedStyle() {
+        String style = sp.getString("speed_style", "digital");
+        boolean isDigital = "digital".equals(style);
+        View speedGroup = floatingView.findViewById(R.id.custom_navi_speed_group);
+        if (speedGroup != null) speedGroup.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        if (tvSpeed != null) tvSpeed.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        if (tvSpeedUnit != null) tvSpeedUnit.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        // 仪表盘同步速度组的位置
+        if (speedGauge != null) {
+            speedGauge.setVisibility(isDigital ? View.GONE : View.VISIBLE);
+            // 同步坐标
+            if (speedGroup != null) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) speedGroup.getLayoutParams();
+                ViewGroup.MarginLayoutParams glp = (ViewGroup.MarginLayoutParams) speedGauge.getLayoutParams();
+                if (mlp != null && glp != null) {
+                    glp.leftMargin = mlp.leftMargin;
+                    glp.topMargin = mlp.topMargin;
+                    speedGauge.setLayoutParams(glp);
+                }
+            }
+        }
     }
 
     private void adjustRootToFit() {
         View root = floatingView.findViewById(R.id.root_layout);
         if (!(root instanceof ViewGroup)) return;
         ViewGroup vg = (ViewGroup) root;
+        // 强制重新测量，避免动态添加的子视图使用脏缓存
+        vg.forceLayout();
+        vg.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int maxR = 0, maxB = 0;
         for (int i = 0; i < vg.getChildCount(); i++) {
             View c = vg.getChildAt(i);
             if (c.getVisibility() != View.VISIBLE) continue;
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
-            int w = c.getMeasuredWidth() > 0 ? c.getMeasuredWidth() : dpToPx(50);
-            int h = c.getMeasuredHeight() > 0 ? c.getMeasuredHeight() : dpToPx(50);
-            float s = c.getScaleX();
-            int r = mlp.leftMargin + (int)(w * s);
-            int b = mlp.topMargin + (int)(h * s);
+            int w = Math.max(c.getMeasuredWidth(), c.getMinimumWidth());
+            int h = Math.max(c.getMeasuredHeight(), c.getMinimumHeight());
+            if (w <= 0) w = dpToPx(50);
+            if (h <= 0) h = dpToPx(30);
+            float s = Math.abs(c.getScaleX());
+            // 计算右/下边缘时同时考虑 margin 两侧和缩放
+            int r = mlp.leftMargin + (int)(w * s) + (mlp.rightMargin > 0 ? mlp.rightMargin : 0);
+            int b = mlp.topMargin + (int)(h * s) + (mlp.bottomMargin > 0 ? mlp.bottomMargin : 0);
             if (r > maxR) maxR = r;
             if (b > maxB) maxB = b;
         }
@@ -101,8 +135,8 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         float xDp = sp.getFloat(PREFIX + key + "_x", getDefaultX(key));
         float yDp = sp.getFloat(PREFIX + key + "_y", getDefaultY(key));
         boolean enabled = sp.getBoolean(PREFIX + key + "_enabled", true);
-        int xPx = Math.round(xDp * density);
-        int yPx = Math.round(yDp * density);
+        int xPx = Math.round(xDp * density * physicalScale);
+        int yPx = Math.round(yDp * density * physicalScale);
         ViewGroup.LayoutParams lp = view.getLayoutParams();
         if (lp instanceof FrameLayout.LayoutParams) {
             FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) lp;
@@ -119,6 +153,11 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         float sz = sp.getFloat(PREFIX + key + "_size", 1.0f);
         view.setScaleX(sz);
         view.setScaleY(sz);
+        // 仪表盘同步速度组的缩放
+        if ("speed".equals(key) && speedGauge != null) {
+            speedGauge.setScaleX(sz);
+            speedGauge.setScaleY(sz);
+        }
     }
 
     private void reapplySize(String key) {
@@ -167,10 +206,11 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         boolean speedEnabled = sp.getBoolean(PREFIX + "speed_enabled", true);
         boolean turnInfoEnabled = sp.getBoolean(PREFIX + "turninfo_enabled", true);
 
+        int limit = cameraSpeed > 0 ? cameraSpeed : limitedSpeed;
+        boolean overspeed = sp.getBoolean("overspeed_warning_enabled", true) && limit > 0 && curSpeed > limit;
+
         if (tvSpeed != null) {
             tvSpeed.setText(String.valueOf(curSpeed));
-            int limit = cameraSpeed > 0 ? cameraSpeed : limitedSpeed;
-            boolean overspeed = sp.getBoolean("overspeed_warning_enabled", true) && limit > 0 && curSpeed > limit;
             if (overspeed) {
                 tvSpeed.setTextColor(Color.RED);
                 ObjectAnimator anim = (ObjectAnimator) tvSpeed.getTag();
@@ -191,6 +231,11 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         }
         if (tvSpeedUnit != null) tvSpeedUnit.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
         reapplySize("speed");
+        // 更新仪表（中央数字白色，超速时变红）
+        if (speedGauge != null) {
+            speedGauge.setSpeed(curSpeed);
+            speedGauge.setOverspeed(overspeed);
+        }
 
         if (ivTurnIcon != null) {
             int turnRes = getTurnIconRes(icon);
@@ -244,6 +289,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         mCameraType = cameraType; mCameraDist = cameraDist; mCameraSpeed = cameraSpeed;
         updateCameraDist();
         reapplySize("direction");
+        adjustRootToFit();
     }
 
     @Override
@@ -252,10 +298,16 @@ public class CustomNaviWindow extends BaseFloatingWindow {
     @Override
     public void updateTrafficLight(int status, int dir, int countdown) {
         if (trafficLightView == null) return;
-        if (countdown <= 0) { trafficLightView.clear(); return; }
-        trafficLightView.setVisibility(View.VISIBLE);
+        // 检查用户开关：关闭时强制隐藏，不响应数据
+        if (!sp.getBoolean(PREFIX + "trafficlight_enabled", true)) {
+            trafficLightView.setVisibility(View.GONE);
+            return;
+        }
+        if (countdown <= 0) { trafficLightView.clear(); adjustRootToFit(); return; }
         trafficLightView.setData(status, dir, countdown, true);
+        trafficLightView.setVisibility(View.VISIBLE);
         reapplySize("trafficlight");
+        adjustRootToFit();
     }
 
     private void updateCameraDist() {
@@ -270,9 +322,14 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         if (laneLineView != null) {
             if (sp.getBoolean(PREFIX + "lane_enabled", true)) {
                 laneLineView.updateLanes(driveWayJson);
+                laneLineView.setVisibility(View.VISIBLE);
                 reapplySize("lane");
+                adjustRootToFit();
+            } else {
+                laneLineView.clear();
+                laneLineView.setVisibility(View.GONE);
+                adjustRootToFit();
             }
-            else laneLineView.clear();
         }
     }
 
@@ -283,6 +340,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         if (tmcProgressBar != null) {
             tmcProgressBar.updateTmcData(tmcJson);
             reapplySize("tmc");
+            adjustRootToFit();
         }
     }
 
@@ -291,6 +349,7 @@ public class CustomNaviWindow extends BaseFloatingWindow {
         this.themeColor = themeColor;
         int accent = isDarkThemeColor(themeColor) ? Color.WHITE : themeColor;
         if (tvSpeed != null && !isOverspeedBlinking) tvSpeed.setTextColor(accent);
+        if (speedGauge != null) speedGauge.setThemeColor(themeColor);
         if (sp.getBoolean(PREFIX + "accent_navi_info_enabled", false)) {
             if (tvDistNum != null) tvDistNum.setTextColor(accent);
             if (tvDistUnit != null) tvDistUnit.setTextColor(accent);
@@ -345,6 +404,13 @@ public class CustomNaviWindow extends BaseFloatingWindow {
             if (tvDirection != null) tvDirection.setTextColor(accent);
             if (tvLightCount != null) tvLightCount.setTextColor(accent);
         }
+    }
+
+    @Override
+    public void setPhysicalScale(float scale) {
+        super.setPhysicalScale(scale);
+        // 重新应用自定义布局，使用新的缩放比例计算所有元素的 margin
+        applyCustomLayout();
     }
 
     @Override

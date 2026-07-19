@@ -20,6 +20,7 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
     private LinearLayout llTrafficLightsContainer;
     private CameraWarningView cameraGroup;
     private LaneLineView laneLineView;
+    private SpeedometerView speedGauge;
     private int themeColor = 0xFF4FC3F7;
     private boolean isOverspeedBlinking = false;
     public static final String PREFIX = "custom_cruise_";
@@ -37,6 +38,7 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         llTrafficLightsContainer = floatingView.findViewById(R.id.custom_traffic_lights);
         cameraGroup = floatingView.findViewById(R.id.custom_camera);
         laneLineView = floatingView.findViewById(R.id.custom_lane_line);
+        speedGauge = floatingView.findViewById(R.id.cruise_speed_gauge);
         if (laneLineView != null) laneLineView.setSimpleMode(true);
         themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
         applyCustomLayout();
@@ -52,6 +54,8 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         applyElement(laneLineView, "lane");
         applyElement(llTrafficLightsContainer, "trafficlight");
         applyElement(cameraGroup, "camera");
+        // 速度样式最后应用，覆盖 applyElement 设置的显隐
+        applySpeedStyle();
         adjustRootToFit();
     }
 
@@ -59,24 +63,23 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         View root = floatingView.findViewById(R.id.root_layout);
         if (!(root instanceof ViewGroup)) return;
         ViewGroup vg = (ViewGroup) root;
-        // 先强制测量获取实际尺寸
+        // 强制重新测量，避免动态添加的子视图使用脏缓存
+        vg.forceLayout();
         vg.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int maxR = 0, maxB = 0;
         for (int i = 0; i < vg.getChildCount(); i++) {
             View c = vg.getChildAt(i);
             if (c.getVisibility() != View.VISIBLE) continue;
-            // 确保子视图已测量
-            c.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) c.getLayoutParams();
             int w = Math.max(c.getMeasuredWidth(), c.getMinimumWidth());
             int h = Math.max(c.getMeasuredHeight(), c.getMinimumHeight());
             if (w <= 0) w = dpToPx(50);
             if (h <= 0) h = dpToPx(30);
-            float s = Math.max(c.getScaleX(), 1.0f);
-            int r = mlp.leftMargin + (int)(w * s);
-            int b = mlp.topMargin + (int)(h * s);
+            float s = Math.abs(c.getScaleX());
+            // 计算右/下边缘时同时考虑 margin 两侧和缩放
+            int r = mlp.leftMargin + (int)(w * s) + (mlp.rightMargin > 0 ? mlp.rightMargin : 0);
+            int b = mlp.topMargin + (int)(h * s) + (mlp.bottomMargin > 0 ? mlp.bottomMargin : 0);
             if (r > maxR) maxR = r;
             if (b > maxB) maxB = b;
         }
@@ -89,14 +92,37 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         }
     }
 
+    /** 根据 speed_style 偏好切换数字/仪表速度 */
+    private void applySpeedStyle() {
+        String style = sp.getString("speed_style", "digital");
+        boolean isDigital = "digital".equals(style);
+        View speedGroup = floatingView.findViewById(R.id.custom_speed_group);
+        if (speedGroup != null) speedGroup.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        if (tvCruiseSpeed != null) tvCruiseSpeed.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        if (tvCruiseUnit != null) tvCruiseUnit.setVisibility(isDigital ? View.VISIBLE : View.INVISIBLE);
+        // 仪表盘同步速度组的位置
+        if (speedGauge != null) {
+            speedGauge.setVisibility(isDigital ? View.GONE : View.VISIBLE);
+            if (speedGroup != null) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) speedGroup.getLayoutParams();
+                ViewGroup.MarginLayoutParams glp = (ViewGroup.MarginLayoutParams) speedGauge.getLayoutParams();
+                if (mlp != null && glp != null) {
+                    glp.leftMargin = mlp.leftMargin;
+                    glp.topMargin = mlp.topMargin;
+                    speedGauge.setLayoutParams(glp);
+                }
+            }
+        }
+    }
+
     private void applyElement(View view, String key) {
         if (view == null) return;
         float density = context.getResources().getDisplayMetrics().density;
         float xDp = sp.getFloat(PREFIX + key + "_x", getDefaultX(key));
         float yDp = sp.getFloat(PREFIX + key + "_y", getDefaultY(key));
         boolean enabled = sp.getBoolean(PREFIX + key + "_enabled", true);
-        int xPx = Math.round(xDp * density);
-        int yPx = Math.round(yDp * density);
+        int xPx = Math.round(xDp * density * physicalScale);
+        int yPx = Math.round(yDp * density * physicalScale);
         ViewGroup.LayoutParams lp = view.getLayoutParams();
         if (lp instanceof FrameLayout.LayoutParams) {
             FrameLayout.LayoutParams flp = (FrameLayout.LayoutParams) lp;
@@ -154,10 +180,11 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
     @Override
     public void updateCruiseInfo(int speed, String roadName, int cameraType, int cameraSpeed, int cameraDist, int carDirection) {
         boolean speedEnabled = sp.getBoolean(PREFIX + "speed_enabled", true);
+        int limit = cameraSpeed > 0 ? cameraSpeed : 0;
+        boolean overspeed = sp.getBoolean("overspeed_warning_enabled", true) && limit > 0 && speed > limit;
+
         if (tvCruiseSpeed != null) {
             tvCruiseSpeed.setText(String.valueOf(speed));
-            int limit = cameraSpeed > 0 ? cameraSpeed : 0;
-            boolean overspeed = sp.getBoolean("overspeed_warning_enabled", true) && limit > 0 && speed > limit;
             if (overspeed) {
                 tvCruiseSpeed.setTextColor(Color.RED);
                 ObjectAnimator anim = (ObjectAnimator) tvCruiseSpeed.getTag();
@@ -178,6 +205,11 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         }
         if (tvCruiseUnit != null) tvCruiseUnit.setVisibility(speedEnabled ? View.VISIBLE : View.GONE);
         reapplySize("speed");
+        // 更新仪表
+        if (speedGauge != null) {
+            speedGauge.setSpeed(speed);
+            speedGauge.setOverspeed(overspeed);
+        }
         if (tvCruiseRoadName != null) {
             if (sp.getBoolean(PREFIX + "roadname_enabled", true)) {
                 tvCruiseRoadName.setText(roadName);
@@ -206,6 +238,12 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
     @Override
     public void updateCruiseTrafficLights(JSONArray lightsArray) {
         if (llTrafficLightsContainer == null) return;
+        // 检查用户开关：关闭时强制隐藏
+        if (!sp.getBoolean(PREFIX + "trafficlight_enabled", true)) {
+            llTrafficLightsContainer.setVisibility(View.GONE);
+            llTrafficLightsContainer.removeAllViews();
+            return;
+        }
         int count = lightsArray != null ? lightsArray.length() : 0;
         if (count == 0) { llTrafficLightsContainer.setVisibility(View.GONE); llTrafficLightsContainer.removeAllViews(); return; }
         llTrafficLightsContainer.removeAllViews();
@@ -234,10 +272,14 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
         if (laneLineView != null) {
             if (sp.getBoolean(PREFIX + "lane_enabled", true)) {
                 laneLineView.updateLanes(driveWayJson);
+                laneLineView.setVisibility(View.VISIBLE);
                 reapplySize("lane");
                 adjustRootToFit();
+            } else {
+                laneLineView.clear();
+                laneLineView.setVisibility(View.GONE);
+                adjustRootToFit();
             }
-            else laneLineView.clear();
         }
     }
 
@@ -282,6 +324,13 @@ public class CustomCruiseWindow extends BaseFloatingWindow {
             if (tvCruiseUnit != null) tvCruiseUnit.setTextColor(accent);
             if (tvCruiseDirection != null) tvCruiseDirection.setTextColor(accent);
         }
+    }
+
+    @Override
+    public void setPhysicalScale(float scale) {
+        super.setPhysicalScale(scale);
+        // 重新应用自定义布局，使用新的缩放比例计算所有元素的 margin
+        applyCustomLayout();
     }
 
     @Override

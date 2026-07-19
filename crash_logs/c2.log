@@ -1,0 +1,36 @@
+========== 崩溃日志 ==========
+时间: 2026-07-17 17:19:54
+
+【设备信息】
+品牌: Redmi
+型号: 2510DRK44C
+设备: annibale
+Android版本: 16
+API Level: 36
+
+【应用信息】
+包名: com.navi.link
+版本名: 2.5.9
+版本号: 259
+
+
+【异常堆栈】
+java.lang.RuntimeException: Error receiving broadcast Intent { act=AUTONAVI_STANDARD_BROADCAST_SEND flg=0x10 xflg=0x4 (has extras) } in com.navi.link.AmapNaviReceiver@7d13aa4
+	at android.app.LoadedApk$ReceiverDispatcher$Args.lambda$getRunnable$0(LoadedApk.java:1970)
+	at android.app.LoadedApk$ReceiverDispatcher$Args.$r8$lambda$mcNAAl1SQ4MyJPyDg8TJ2x2h0Rk(Unknown Source:0)
+	at android.app.LoadedApk$ReceiverDispatcher$Args$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at android.os.Handler.handleCallback(Handler.java:1029)
+	at android.os.Handler.dispatchMessage(Handler.java:107)
+	at android.os.Looper.loopOnce(Looper.java:274)
+	at android.os.Looper.loop(Looper.java:369)
+	at android.app.ActivityThread.main(ActivityThread.java:10089)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:616)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1137)
+Caused by: java.lang.ArrayIndexOutOfBoundsException: length=3; index=3
+	at com.navi.link.FloatingWindowManager.getScale(FloatingWindowManager.java:240)
+	at com.navi.link.FloatingWindowManager.recreateWindow(FloatingWindowManager.java:564)
+	at com.navi.link.FloatingWindowManager.switchToNaviMode(FloatingWindowManager.java:362)
+	at com.navi.link.AmapNaviReceiver.onReceive(AmapNaviReceiver.java:108)
+	at android.app.LoadedApk$ReceiverDispatcher$Args.lambda$getRunnable$0(LoadedApk.java:1959)
+	... 10 more

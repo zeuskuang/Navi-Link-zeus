@@ -34,6 +34,11 @@ public class AutoMapService extends Service {
         super.onCreate();
         createNotificationChannel();
         floatingWindowManager = FloatingWindowManager.getInstance(this);
+        // 提前启动车机 GPS 监听，便于「设备位置 → 灯位置」距离计算
+        try {
+            DeviceLocation.get(this);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -51,6 +56,8 @@ public class AutoMapService extends Service {
 
         amapNaviReceiver = new AmapNaviReceiver();
         IntentFilter filter = new IntentFilter("AUTONAVI_STANDARD_BROADCAST_SEND");
+        // 收高德注入的巡航设施(红绿灯/摄像头)坐标广播
+        filter.addAction("com.navi.link.CRUISE_FACILITY");
         ContextCompat.registerReceiver(this, amapNaviReceiver, filter,
                 ContextCompat.RECEIVER_EXPORTED);
 

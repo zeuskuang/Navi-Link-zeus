@@ -28,12 +28,17 @@ import androidx.appcompat.widget.SwitchCompat;
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.Manifest;
+import androidx.core.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
 import android.app.AlertDialog;
 import android.hardware.display.DisplayManager;
 import android.view.Display;
 import android.text.TextUtils;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.io.File;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
 import android.widget.ArrayAdapter;
@@ -59,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_IS_SERVICE_ONLY = "is_service_only";
     public static final String PREFS_NAME = "floating_config";
     private static final int REQUEST_OVERLAY_PERMISSION = 100;
+    private static final int REQUEST_LOCATION_PERMISSION = 101;
 
     private static final int[] THEME_COLORS = {
             0xFF1A1A1A,  // 黑色
@@ -158,6 +164,46 @@ public class MainActivity extends AppCompatActivity {
     private MaterialCardView cardClusterMirrorToggle;
     private SwitchCompat cbClusterMirrorEnabled;
     private TextView tvClusterMirrorStatus;
+    private MaterialCardView cardTcpSubScreenToggle;
+    private SwitchCompat cbTcpSubScreenEnabled;
+    private TextView tvTcpSubScreenStatus;
+    private View btnTcpSubScreenPos;
+    private SecondScreenDiscovery secondScreenDiscovery;
+    private final Handler tcpStatusHandler = new Handler(Looper.getMainLooper());
+    private boolean lastTcpConnected = false;
+    private final Runnable tcpStatusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // 检测 TCP 副屏连接状态变化，变化时刷新悬浮窗可见性，
+            // 使"副屏显示时隐藏主屏"在 TCP 副屏连接/断开时即时生效
+            boolean connected = false;
+            SharedPreferences sp = getSharedPreferences("floating_config", MODE_PRIVATE);
+            if (sp.getBoolean("tcp_sub_screen_enabled", false)) {
+                SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance();
+                connected = tx != null && tx.isConnected();
+            }
+            if (connected != lastTcpConnected) {
+                lastTcpConnected = connected;
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.updateFloatingWindowVisibility();
+                }
+            }
+            updateTcpSubScreenStatus();
+            tcpStatusHandler.postDelayed(this, 1000);
+        }
+    };
+    private final SecondScreenDiscovery.Listener tcpDiscoveryListener = (ip, deviceName, tcpPort) -> {
+        runOnUiThread(() -> {
+            SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance(MainActivity.this);
+            if (tx == null) return;
+            if (tx.isConnected()) return;
+            tx.setTargetIp(ip);
+            getSharedPreferences("floating_config", MODE_PRIVATE)
+                    .edit().putString("tcp_sub_screen_name", deviceName).apply();
+            updateTcpSubScreenStatus();
+        });
+    };
     private MaterialCardView cardClusterDisplaySelect;
     private TextView tvClusterDisplaySelectStatus;
     private TextView btnAdjustClusterPos;
@@ -333,64 +379,53 @@ public class MainActivity extends AppCompatActivity {
         loadPreferences();
         setupListeners();
         updateStatusText();
-        setupUpdateEntry();
         if (savedInstanceState == null) {
             checkPermissionAndStart();
-            // 启动时静默检查更新（仅在有新版本时弹窗）
-            UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, false, updateCallback(false));
         }
     }
 
-    // ── 应用内更新 ──────────────────────────────────────────────
-    private TextView tvVersionStatus;
 
-    /** 绑定"软件版本"入口，点击手动检查更新。 */
-    private void setupUpdateEntry() {
-        tvVersionStatus = tvAboutAppVersion;
-        if (tvVersionStatus != null) {
-            tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME);
+
+    /** 读取最近一次崩溃日志并在对话框中展示，便于复制排查闪退 */
+    private void showLatestCrashLog() {
+        File dir = CrashHandler.getInstance().getCrashDir();
+        if (dir == null || !dir.exists()) {
+            Toast.makeText(this, "暂无崩溃日志", Toast.LENGTH_SHORT).show();
+            return;
         }
-        View versionRow = findViewById(R.id.ll_about_version);
-        if (versionRow != null) {
-            versionRow.setOnClickListener(v -> {
-                if (tvVersionStatus != null) tvVersionStatus.setText("正在检查更新…");
-                UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, true, updateCallback(true));
-            });
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".log"));
+        if (files == null || files.length == 0) {
+            Toast.makeText(this, "暂无崩溃日志", Toast.LENGTH_SHORT).show();
+            return;
         }
-    }
-
-    /** 构造更新检查回调。manual=true 时，"已最新/失败"也会给出提示。 */
-    private UpdateChecker.Callback updateCallback(boolean manual) {
-        return new UpdateChecker.Callback() {
-            @Override
-            public void onUpdateAvailable(UpdateChecker.UpdateInfo info) {
-                if (isFinishing() || isDestroyed()) return;
-                if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("有新版 v" + info.versionName);
-                }
-                UpdateDialog.show(MainActivity.this, BuildConfig.VERSION_NAME, info);
-            }
-
-            @Override
-            public void onNoUpdate(boolean manual) {
-                if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME + " (已最新)");
-                }
-                if (manual) {
-                    Toast.makeText(MainActivity.this, "已是最新版本", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onError(String message, boolean manual) {
-                if (tvVersionStatus != null) {
-                    tvVersionStatus.setText("v" + BuildConfig.VERSION_NAME);
-                }
-                if (manual) {
-                    Toast.makeText(MainActivity.this, "检查更新失败：" + message, Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
+        Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        StringBuilder sb = new StringBuilder();
+        try (java.util.Scanner sc = new java.util.Scanner(files[0], "UTF-8")) {
+            while (sc.hasNextLine()) sb.append(sc.nextLine()).append("\n");
+        } catch (Exception e) {
+            sb.append("读取失败: ").append(e.getMessage());
+        }
+        String log = "文件: " + files[0].getName() + "\n\n" + sb;
+        ScrollView sv = new ScrollView(this);
+        TextView tv = new TextView(this);
+        tv.setText(log.length() > 12000 ? log.substring(0, 12000) + "\n…(已截断)" : log);
+        tv.setTextIsSelectable(true);
+        tv.setPadding(40, 30, 40, 30);
+        tv.setTextSize(11);
+        sv.addView(tv);
+        new AlertDialog.Builder(this)
+                .setTitle("最近崩溃日志")
+                .setView(sv)
+                .setPositiveButton("复制全部", (d, w) -> {
+                    android.content.ClipboardManager cm = (android.content.ClipboardManager)
+                            getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("crash", log));
+                        Toast.makeText(this, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
     }
 
     private void initViews() {
@@ -470,6 +505,10 @@ public class MainActivity extends AppCompatActivity {
         cbClusterMirrorEnabled = findViewById(R.id.cb_cluster_mirror_enabled);
         tvClusterMirrorStatus = findViewById(R.id.tv_cluster_mirror_status);
         cardClusterMirrorToggle = findViewById(R.id.card_cluster_mirror_toggle);
+        cardTcpSubScreenToggle = findViewById(R.id.card_tcp_sub_screen_toggle);
+        cbTcpSubScreenEnabled = findViewById(R.id.cb_tcp_sub_screen_enabled);
+        tvTcpSubScreenStatus = findViewById(R.id.tv_tcp_sub_screen_status);
+        btnTcpSubScreenPos = findViewById(R.id.btn_tcp_sub_screen_pos);
         cardClusterDisplaySelect = findViewById(R.id.card_cluster_display_select);
         tvClusterDisplaySelectStatus = findViewById(R.id.tv_cluster_display_select_status);
         btnAdjustClusterPos = findViewById(R.id.btn_adjust_cluster_pos);
@@ -1048,6 +1087,43 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean("minimal_autocenter_enabled", isMinimalAutocenterEnabled);
         editor.putBoolean("minimal_speed_limit_enabled", isMinimalSpeedLimitEnabled);
         editor.apply();
+    }
+
+    private void updateTcpSubScreenStatus() {
+        if (tvTcpSubScreenStatus == null || cbTcpSubScreenEnabled == null) return;
+        SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance();
+        SharedPreferences sp = getSharedPreferences("floating_config", MODE_PRIVATE);
+        String name = sp.getString("tcp_sub_screen_name", "");
+        if (cbTcpSubScreenEnabled.isChecked()) {
+            String ip = tx != null ? tx.getTargetIp() : "";
+            if (ip.isEmpty()) {
+                tvTcpSubScreenStatus.setText(name.isEmpty() ? "已开启，正在自动发现副屏…"
+                        : "已开启，正在自动发现 " + name + "…");
+            } else if (tx != null && tx.isConnected()) {
+                tvTcpSubScreenStatus.setText("已连接 " + (name.isEmpty() ? ip : name + " (" + ip + ")"));
+            } else {
+                tvTcpSubScreenStatus.setText("已配对 " + (name.isEmpty() ? ip : name + " (" + ip + ")") + "，连接中…");
+            }
+        } else {
+            tvTcpSubScreenStatus.setText("经 WiFi 自动发现副屏并发送导航数据");
+        }
+    }
+
+    private void startTcpDiscovery() {
+        if (secondScreenDiscovery == null) {
+            secondScreenDiscovery = new SecondScreenDiscovery(tcpDiscoveryListener);
+        }
+        secondScreenDiscovery.start();
+        tcpStatusHandler.removeCallbacks(tcpStatusRunnable);
+        tcpStatusHandler.postDelayed(tcpStatusRunnable, 500);
+    }
+
+    private void stopTcpDiscovery() {
+        tcpStatusHandler.removeCallbacks(tcpStatusRunnable);
+        if (secondScreenDiscovery != null) {
+            secondScreenDiscovery.stop();
+            secondScreenDiscovery = null;
+        }
     }
 
     private void initThemeColorChips() {
@@ -1661,6 +1737,48 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        // TCP 副屏（结构化数据重绘）开关与设置 —— 自动发现副屏，无需手动填写 IP
+        SharedPreferences tcpSp = getSharedPreferences("floating_config", MODE_PRIVATE);
+        if (cbTcpSubScreenEnabled != null) {
+            cbTcpSubScreenEnabled.setChecked(tcpSp.getBoolean("tcp_sub_screen_enabled", false));
+        }
+        updateTcpSubScreenStatus();
+        if (cardTcpSubScreenToggle != null) {
+            cardTcpSubScreenToggle.setOnClickListener(v -> {
+                if (cbTcpSubScreenEnabled != null) cbTcpSubScreenEnabled.toggle();
+            });
+        }
+        if (cbTcpSubScreenEnabled != null) {
+            cbTcpSubScreenEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance(MainActivity.this);
+                tx.setEnabled(isChecked);
+                if (isChecked) {
+                    startTcpDiscovery();
+                } else {
+                    stopTcpDiscovery();
+                    lastTcpConnected = false;
+                }
+                updateTcpSubScreenStatus();
+                // 开关变化即时刷新悬浮窗可见性（副屏显示时隐藏主屏）
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null) {
+                    fwm.updateFloatingWindowVisibility();
+                }
+            });
+        }
+        if (btnTcpSubScreenPos != null) {
+            btnTcpSubScreenPos.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, ClusterPositionActivity.class);
+                startActivity(intent);
+            });
+        }
+        // 若之前已开启，则在进入设置时自动启动发送端与自动发现
+        if (tcpSp.getBoolean("tcp_sub_screen_enabled", false)) {
+            SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance(MainActivity.this);
+            tx.setEnabled(true);
+            startTcpDiscovery();
+        }
+
         sbScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -1996,6 +2114,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+        // 长按软件版本：查看最近崩溃日志（便于排查闪退）
+        if (tvAboutAppVersion != null) {
+            tvAboutAppVersion.setOnLongClickListener(v -> {
+                showLatestCrashLog();
+                return true;
+            });
+        }
 
         // Initialize default selected panel
         switchMenu(0);
@@ -2057,8 +2182,29 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } else {
-            startFloatingService();
+            ensureLocationPermissionThenStart();
         }
+    }
+
+    /** 悬浮窗权限已就绪后，再申请定位权限（用于「设备位置→灯位置」距离计算） */
+    private void ensureLocationPermissionThenStart() {
+        if (hasLocationPermission()) {
+            startFloatingService();
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    },
+                    REQUEST_LOCATION_PERMISSION);
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -2066,6 +2212,15 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_OVERLAY_PERMISSION
                 && OverlayPermissionCompat.canDrawOverlays(this)) {
+            ensureLocationPermissionThenStart();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            // 无论是否授予定位权限都照常启动服务；未授权只是 GPS 距离不可用时显示「?」
             startFloatingService();
         }
     }
@@ -2078,8 +2233,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateFloatingWindowStyle() {
         FloatingWindowManager manager = FloatingWindowManager.getInstance();
-        if (manager == null || !manager.isShowing()) return;
-        manager.refreshWindow();
+        if (manager != null && manager.isShowing()) {
+            manager.refreshWindow();
+        }
+        // 样式/布局切换实时推送到副屏接收端
+        SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance();
+        if (tx != null && tx.isRunning()) {
+            tx.pushConfig();
+        }
     }
 
     private void updateFloatingWindowScale() {
@@ -2143,6 +2304,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        stopTcpDiscovery();
         super.onDestroy();
     }
 

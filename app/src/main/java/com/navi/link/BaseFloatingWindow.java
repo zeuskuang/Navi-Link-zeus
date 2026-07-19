@@ -22,7 +22,19 @@ public abstract class BaseFloatingWindow {
     protected static final int TEXT_HINT_DARK = 0xFF888888;
 
     protected boolean isNightMode = true;
-    protected boolean isClusterWindow = false;
+
+    // 物理缩放因子：用于 dp→px 坐标换算，以及内部动态视图（红绿灯等）缩放
+    protected float physicalScale = 1.0f;
+
+    /** 设置窗口物理缩放比例（由 FloatingWindowManager 注入当前 scale） */
+    public void setPhysicalScale(float scale) {
+        this.physicalScale = scale;
+    }
+
+    /** 返回窗口当前物理缩放比例（供内部动态视图缩放使用） */
+    protected float getWindowScale() {
+        return physicalScale;
+    }
 
     public BaseFloatingWindow(Context context, View floatingView) {
         this.context = context;
@@ -209,19 +221,5 @@ public abstract class BaseFloatingWindow {
                 scaleViewRecursive(vg.getChildAt(i), factor);
             }
         }
-    }
-
-    public void setClusterWindow(boolean clusterWindow) {
-        this.isClusterWindow = clusterWindow;
-        onScaleChanged();
-    }
-
-    protected void onScaleChanged() {
-    }
-
-    public float getWindowScale() {
-        FloatingWindowManager fwm = FloatingWindowManager.getInstance();
-        if (fwm == null) return 1.0f;
-        return isClusterWindow ? fwm.getClusterScale() : fwm.getScale();
     }
 }

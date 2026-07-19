@@ -210,8 +210,10 @@ public class NormalNaviWindow extends BaseFloatingWindow {
         if (laneLineView != null) {
             if (isNormalNaviLaneEnabled()) {
                 laneLineView.updateLanes(driveWayJson);
+                laneLineView.setVisibility(View.VISIBLE);
             } else {
                 laneLineView.clear();
+                laneLineView.setVisibility(View.GONE);
             }
         }
     }

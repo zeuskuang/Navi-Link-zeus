@@ -243,8 +243,10 @@ public class MinimalNaviWindow extends BaseFloatingWindow {
             boolean laneEnabled = sp.getBoolean("minimal_navi_lane_enabled", false);
             if (laneEnabled) {
                 laneLineViewMin.updateLanes(driveWayJson);
+                laneLineViewMin.setVisibility(View.VISIBLE);
             } else {
                 laneLineViewMin.clear();
+                laneLineViewMin.setVisibility(View.GONE);
             }
         }
     }
