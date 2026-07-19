@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,11 +71,15 @@ public class ClusterPositionActivity extends AppCompatActivity {
         }
 
         FloatingWindowManager fwm = FloatingWindowManager.getInstance();
-        if (fwm == null || !fwm.isClusterMirrorActive()) {
-            Toast.makeText(this, "副屏投屏未开启，请先开启投屏", Toast.LENGTH_SHORT).show();
+        boolean tcpEnabled = getSharedPreferences("floating_config", MODE_PRIVATE)
+                .getBoolean("tcp_sub_screen_enabled", false);
+        if (fwm == null || (!fwm.isClusterMirrorActive() && !tcpEnabled)) {
+            Toast.makeText(this, "请先开启副屏投屏或 TCP 副屏", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
+        final boolean tcpMode = tcpEnabled && !fwm.isClusterMirrorActive();
 
         // 读取主题色
         SharedPreferences sp = getSharedPreferences("floating_config", MODE_PRIVATE);
@@ -97,6 +102,7 @@ public class ClusterPositionActivity extends AppCompatActivity {
         // 动态应用主题色与样式
         if (tvTitle != null) {
             tvTitle.setTextColor(accentColor);
+            tvTitle.setText(tcpMode ? "TCP 副屏位置 / 缩放调整" : "副屏投屏位置调整");
         }
         if (btnDone != null) {
             btnDone.setBackgroundTintList(ColorStateList.valueOf(accentColor));
@@ -120,18 +126,35 @@ public class ClusterPositionActivity extends AppCompatActivity {
             indicator.setBackground(indicatorBg);
         }
 
-        int sw = fwm.getClusterScreenWidth();
-        int sh = fwm.getClusterScreenHeight();
+        int sw, sh;
+        if (tcpMode) {
+            // TCP 副屏无物理屏：使用发送端设计画布 1920x1280 作为定位坐标空间
+            sw = 1920;
+            sh = 1280;
+        } else {
+            sw = fwm.getClusterScreenWidth();
+            sh = fwm.getClusterScreenHeight();
+            if (sw <= 0 || sh <= 0) {
+                sw = 1920;
+                sh = 1280;
+            }
+        }
         int w = fwm.getClusterNaturalWidth();
         int h = fwm.getClusterNaturalHeight();
 
-        if (sw <= 0 || sh <= 0) {
-            sw = 1920;
-            sh = 720;
+        if (w <= 0 || h <= 0) {
+            w = dpToPx(160);
+            h = dpToPx(120);
         }
         if (w <= 0 || h <= 0) {
             w = dpToPx(160);
             h = dpToPx(120);
+        }
+
+        if (tcpMode) {
+            // TCP 副屏无物理屏，用代表性窗口尺寸作为指示器
+            w = dpToPx(360);
+            h = dpToPx(180);
         }
 
         final int finalSw = sw;
@@ -139,7 +162,11 @@ public class ClusterPositionActivity extends AppCompatActivity {
         final int finalW = w;
         final int finalH = h;
 
-        final int[] currentPos = new int[]{ fwm.getClusterSavedPosX(), fwm.getClusterSavedPosY() };
+        int initX = tcpMode ? fwm.getTcpPosX() : fwm.getClusterSavedPosX();
+        int initY = tcpMode ? fwm.getTcpPosY() : fwm.getClusterSavedPosY();
+        if (initX < 0) initX = (sw - w) / 2;
+        if (initY < 0) initY = (sh - h) / 2;
+        final int[] currentPos = new int[]{ initX, initY };
 
         Runnable refreshIndicator = new Runnable() {
             @Override
@@ -298,6 +325,37 @@ public class ClusterPositionActivity extends AppCompatActivity {
                 currentPos[1] = (finalSh - finalH) / 2;
                 fwm.updateClusterPosition(currentPos[0], currentPos[1]);
                 refreshIndicator.run();
+            });
+        }
+
+        // ===== TCP 副屏缩放入口 =====
+        SeekBar sbScale = findViewById(R.id.sb_scale);
+        TextView tvScaleValue = findViewById(R.id.tv_scale_value);
+        if (sbScale != null && tvScaleValue != null) {
+            float baseScale = tcpMode ? fwm.getTcpScale()
+                    : (fwm.isClusterMirrorActive() ? fwm.getClusterScale() : 1.0f);
+            sbScale.setProgress(Math.round(((baseScale - 0.5f) / 1.5f) * 30f));
+            tvScaleValue.setText(String.format("%.1fx", baseScale));
+            sbScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                }
+
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    float sc = (progress / 30.0f) * 1.5f + 0.5f;
+                    tvScaleValue.setText(String.format("%.1fx", sc));
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    float sc = (seekBar.getProgress() / 30.0f) * 1.5f + 0.5f;
+                    if (tcpMode) {
+                        fwm.setTcpScale(sc);
+                    } else {
+                        fwm.setClusterScale(sc);
+                    }
+                }
             });
         }
     }

@@ -2,7 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/window_root"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clipChildren="false">
 
     <FrameLayout
         android:id="@+id/root_layout"
@@ -54,6 +55,15 @@
                 android:textColor="#BBFFFFFF"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <!-- 仪表速度（与数字速度二选一） -->
+        <com.navi.link.SpeedometerView
+            android:id="@+id/navi_speed_gauge"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
         <!-- 转向信息组: 转向图标 + 距离 -->
         <LinearLayout
@@ -159,6 +169,33 @@
             android:layout_marginStart="100dp"
             android:layout_marginTop="80dp"
             android:visibility="visible" />
+
+        <!-- 区间测速 -->
+        <com.navi.link.IntervalSpeedView
+            android:id="@+id/custom_navi_interval"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="110dp"
+            android:visibility="gone" />
+
+        <!-- 区间起点距离 -->
+        <com.navi.link.IntervalStartView
+            android:id="@+id/custom_navi_interval_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="165dp"
+            android:visibility="gone" />
+
+        <!-- 红绿灯+违章 复合胶囊 -->
+        <com.navi.link.TrafficLightCamView
+            android:id="@+id/custom_navi_lightcam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="280dp"
+            android:layout_marginTop="95dp"
+            android:visibility="gone" />
 
     </FrameLayout>
 </FrameLayout>

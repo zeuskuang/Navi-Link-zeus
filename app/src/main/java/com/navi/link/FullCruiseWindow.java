@@ -187,8 +187,10 @@ public class FullCruiseWindow extends BaseFloatingWindow {
             boolean laneEnabled = sp.getBoolean("normal_navi_lane_enabled", false);
             if (laneEnabled) {
                 laneLineViewFullCruise.updateLanes(driveWayJson);
+                laneLineViewFullCruise.setVisibility(View.VISIBLE);
             } else {
                 laneLineViewFullCruise.clear();
+                laneLineViewFullCruise.setVisibility(View.GONE);
             }
         }
     }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 上部：红绿灯（embedded 模式，不画自身背景，由外层胶囊统一提供） -->
+    <com.navi.link.TrafficLightView
+        android:id="@+id/tlc_light"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:visibility="gone" />
+
+    <!-- 下部：红绿灯违章电子眼距离行 -->
+    <LinearLayout
+        android:id="@+id/tlc_cam_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/tlc_cam_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/camera_lamp" />
+
+        <TextView
+            android:id="@+id/tlc_cam_dist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="6dp"
+            android:includeFontPadding="false"
+            android:text=""
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</merge>

@@ -34,7 +34,7 @@ public class FloatingWindowManager {
     private static final long LIGHT_HIDE_TIMEOUT_MS = 5000;
     private static final long LONG_PRESS_MS = 500;
     private static final long NAVI_TIMEOUT_MS = 6000;
-    private static final long WATCHDOG_TIMEOUT_MS = 5000;
+    private static final long IDLE_HIDE_TIMEOUT_MS = 120000; // 长空闲兜底收起（约2分钟无任何数据才收起）
 
     public static final int MODE_CRUISE = 0;
     public static final int MODE_NAVI = 1;
@@ -76,9 +76,19 @@ public class FloatingWindowManager {
     private int cruiseStyleMode = 0; // 0=常规巡航, 1=灵动岛巡航, 2=全数据巡航
     // 各模式独立缩放: [0]=常规/常规巡航, [1]=灵动岛/灵动岛巡航, [2]=全数据
     private float[] scales = {1.0f, 1.0f, 1.0f};
+    // 副屏（cluster）独立缩放
+    private float clusterScale = 1.0f;
+    // TCP 副屏专用位置/缩放（与仪表盘镜像解耦，独立下发到接收端）
+    private int tcpPosX = -1;
+    private int tcpPosY = -1;
+    private float tcpScale = 1.0f;
     private int themeColor = 0xFF4FC3F7;
     private boolean isShowing = false;
     private boolean hasActiveData = false; // 是否收到过实际导航/巡航广播数据
+    // 会话标志：一旦收到导航/巡航数据即激活，仅在收到对应结束广播(或长空闲兜底)时清除，
+    // 用于避免切后台/高德广播暂停导致的悬浮窗误隐藏
+    private boolean naviSessionActive = false;
+    private boolean cruiseSessionActive = false;
 
     // 昼夜模式 + 透明背景
     private boolean isNightMode = true; // 默认夜间（深色文字）
@@ -150,6 +160,10 @@ public class FloatingWindowManager {
     private String cachedNextSapaName = "";
     private String cachedNextSapaDist = "";
     private int cachedNextSapaType = 0;
+    private int cachedIntervalAvgSpeed = 0;
+    private int cachedIntervalLimitedSpeed = 0;
+    private String cachedIntervalEndDistanceText = "";
+    private int cachedIntervalStartDistance = -1;   // 区间起点距离（米），-1 表示无
 
     private int cachedCrossMap = 0;
 
@@ -158,12 +172,28 @@ public class FloatingWindowManager {
     private ObjectAnimator borderAnimator;
 
     // Runnable
-    private final Runnable naviSwitchRunnable = this::doNaviSwitch;
-    private final Runnable naviTimeoutRunnable = this::onNaviTimeout;
-    private final Runnable cruiseGraceRunnable = this::onCruiseGrace;
+    // 主线程 Handler 回调若抛未捕获异常会直接杀进程（Looper 无兜底），
+    // 这里统一包 try-catch，避免后台看门狗/超时/模式切换导致 zeus 闪退。
+    private final Runnable naviSwitchRunnable = () -> {
+        try { doNaviSwitch(); } catch (Throwable tr) { Log.e(TAG, "naviSwitch crashed", tr); }
+    };
+    private final Runnable naviTimeoutRunnable = () -> {
+        try { onNaviTimeout(); } catch (Throwable tr) { Log.e(TAG, "naviTimeout crashed", tr); }
+    };
+    private final Runnable cruiseGraceRunnable = () -> {
+        try { onCruiseGrace(); } catch (Throwable tr) { Log.e(TAG, "cruiseGrace crashed", tr); }
+    };
     private final Runnable watchdogRunnable = () -> {
-        hasActiveData = false;
-        updateFloatingWindowVisibility();
+        try {
+            // 长空闲兜底：超过 IDLE_HIDE_TIMEOUT_MS 无任何导航/巡航数据，视为会话失活，
+            // 安全收起窗口（下次高德发数据会自动恢复显示）
+            naviSessionActive = false;
+            cruiseSessionActive = false;
+            hasActiveData = false;
+            if (floatingView != null) {
+                floatingView.setVisibility(View.GONE);
+            }
+        } catch (Throwable tr) { Log.e(TAG, "watchdog crashed", tr); }
     };
     private final Runnable trafficLightTimeoutRunnable = this::hideTrafficLightCapsule;
 
@@ -205,6 +235,7 @@ public class FloatingWindowManager {
         scales[0] = sp.getFloat("scale_normal", 1.0f);
         scales[1] = sp.getFloat("scale_minimal", 1.0f);
         scales[2] = sp.getFloat("scale_full", 1.0f);
+        clusterScale = sp.getFloat("cluster_scale", 1.0f);
         themeColor = sp.getInt("theme_color", 0xFF4FC3F7);
         savedPosX = sp.getInt("window_pos_x", -1);
         savedPosY = sp.getInt("window_pos_y", -1);
@@ -214,6 +245,9 @@ public class FloatingWindowManager {
         clusterDisplayId = sp.getInt("cluster_display_id", -1);
         clusterSavedPosX = sp.getInt("cluster_window_pos_x", -1);
         clusterSavedPosY = sp.getInt("cluster_window_pos_y", -1);
+        tcpPosX = sp.getInt("tcp_window_pos_x", -1);
+        tcpPosY = sp.getInt("tcp_window_pos_y", -1);
+        tcpScale = sp.getFloat("tcp_scale", 1.0f);
         isAutoCenteringEnabled = sp.getBoolean("minimal_autocenter_enabled", false);
     }
 
@@ -230,11 +264,70 @@ public class FloatingWindowManager {
             return 0; // 常规巡航
         }
         if (styleMode == 0) return 0; // 常规
+        if (styleMode >= 3) return 2; // 自定义布局基于全数据布局，复用其缩放档
         return styleMode; // 1=灵动岛, 2=全数据
     }
 
     public float getScale() {
         return scales[getScaleIndex()];
+    }
+
+    public float getClusterScale() {
+        return clusterScale;
+    }
+
+    public void setClusterScale(float newScale) {
+        if (Math.abs(clusterScale - newScale) < 0.01f) return;
+        clusterScale = newScale;
+        context.getSharedPreferences("floating_config", Context.MODE_PRIVATE)
+                .edit().putFloat("cluster_scale", clusterScale).apply();
+        if (isClusterMirrorEnabled) {
+            dismissClusterMirror();
+            ensureClusterMirror();
+        }
+        pushSecondScreenConfig();
+    }
+
+    // ======================== TCP 副屏位置/缩放 ========================
+
+    public int getTcpPosX() {
+        return tcpPosX;
+    }
+
+    public int getTcpPosY() {
+        return tcpPosY;
+    }
+
+    public float getTcpScale() {
+        return tcpScale;
+    }
+
+    public void setTcpPosition(int x, int y) {
+        tcpPosX = x;
+        tcpPosY = y;
+        context.getSharedPreferences("floating_config", Context.MODE_PRIVATE)
+                .edit()
+                .putInt("tcp_window_pos_x", x)
+                .putInt("tcp_window_pos_y", y)
+                .apply();
+        pushSecondScreenConfig();
+    }
+
+    public void setTcpScale(float newScale) {
+        if (Math.abs(tcpScale - newScale) < 0.01f) return;
+        tcpScale = newScale;
+        context.getSharedPreferences("floating_config", Context.MODE_PRIVATE)
+                .edit()
+                .putFloat("tcp_scale", tcpScale)
+                .apply();
+        pushSecondScreenConfig();
+    }
+
+    private void pushSecondScreenConfig() {
+        SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance();
+        if (tx != null && tx.isRunning()) {
+            tx.pushConfig();
+        }
     }
 
     private void saveScalePreferences() {
@@ -295,11 +388,13 @@ public class FloatingWindowManager {
     // ======================== 模式切换 ========================
 
     public void onTrafficLightReceived() {
+        naviSessionActive = true;
         if (currentMode != MODE_NAVI) {
             currentMode = MODE_NAVI;
             recreateWindow();
+            pushSecondScreenConfig();
         }
-        resetNaviTimeout();
+        resetWatchdog();
     }
 
     public void switchToCruiseMode() {
@@ -322,20 +417,24 @@ public class FloatingWindowManager {
             return;
         }
         shouldHideAfterRecreate = false;
+        cruiseSessionActive = true;
         if (currentMode != MODE_CRUISE || isNaviWindowActive()) {
             currentMode = MODE_CRUISE;
             recreateWindow();
+            pushSecondScreenConfig();
         }
     }
 
     public void switchToNaviMode() {
         handler.removeCallbacks(naviSwitchRunnable);
         shouldHideAfterRecreate = false;
+        naviSessionActive = true;
         if (currentMode != MODE_NAVI) {
             currentMode = MODE_NAVI;
             recreateWindow();
+            pushSecondScreenConfig();
         }
-        resetNaviTimeout();
+        resetWatchdog();
     }
 
     public void onNavigationEnded() {
@@ -371,6 +470,12 @@ public class FloatingWindowManager {
         cachedNextSapaName = "";
         cachedNextSapaDist = "";
         cachedNextSapaType = 0;
+        cachedIntervalAvgSpeed = 0;
+        cachedIntervalLimitedSpeed = 0;
+        cachedIntervalEndDistanceText = "";
+        cachedIntervalStartDistance = -1;
+        if (activeWindow != null) activeWindow.updateIntervalSpeed(0, 0, 0, "");
+        if (clusterActiveWindow != null) clusterActiveWindow.updateIntervalSpeed(0, 0, 0, "");
 
         cachedCrossMap = 0;
 
@@ -400,14 +505,23 @@ public class FloatingWindowManager {
         cachedCameraSpeed = 0;
         cachedCameraDist = 0;
         cachedDriveWayJson = null;
+        cachedIntervalAvgSpeed = 0;
+        cachedIntervalLimitedSpeed = 0;
+        cachedIntervalEndDistanceText = "";
+        cachedIntervalStartDistance = -1;
 
         hasActiveData = false;
+        cruiseSessionActive = false;
 
         // 取消所有延迟任务
         handler.removeCallbacks(naviTimeoutRunnable);
         handler.removeCallbacks(naviSwitchRunnable);
         handler.removeCallbacks(cruiseGraceRunnable);
         handler.removeCallbacks(watchdogRunnable);
+
+        // 同步清理区间测速（与导航结束一致，避免下次重建窗口残留）
+        if (activeWindow != null) activeWindow.updateIntervalSpeed(0, 0, 0, "");
+        if (clusterActiveWindow != null) clusterActiveWindow.updateIntervalSpeed(0, 0, 0, "");
 
         // 2. 立即隐藏视图
         if (floatingView != null) {
@@ -431,6 +545,14 @@ public class FloatingWindowManager {
 
     public int getCurrentMode() {
         return currentMode;
+    }
+
+    public int getStyleMode() {
+        return styleMode;
+    }
+
+    public int getCruiseStyleMode() {
+        return cruiseStyleMode;
     }
 
     public boolean isCruiseEnabled() {
@@ -465,7 +587,7 @@ public class FloatingWindowManager {
     public void resetWatchdog() {
         hasActiveData = true;
         handler.removeCallbacks(watchdogRunnable);
-        handler.postDelayed(watchdogRunnable, WATCHDOG_TIMEOUT_MS);
+        handler.postDelayed(watchdogRunnable, IDLE_HIDE_TIMEOUT_MS);
         updateFloatingWindowVisibility();
     }
 
@@ -506,7 +628,8 @@ public class FloatingWindowManager {
         int effectiveStyle = currentMode == MODE_CRUISE ? cruiseStyleMode : styleMode;
         int layoutRes;
         if (currentMode == MODE_NAVI) {
-            if (styleMode == 2) layoutRes = R.layout.layout_floating_navi_full;
+            if (styleMode == 3) layoutRes = R.layout.layout_floating_navi_custom;
+            else if (styleMode == 2) layoutRes = R.layout.layout_floating_navi_full;
             else if (styleMode == 1) layoutRes = R.layout.layout_floating_navi_minimal;
             else layoutRes = R.layout.layout_floating_navi_normal;
         } else {
@@ -514,6 +637,8 @@ public class FloatingWindowManager {
                     ? R.layout.layout_floating_cruise_minimal
                     : effectiveStyle == 2
                     ? R.layout.layout_floating_cruise_full
+                    : effectiveStyle == 3
+                    ? R.layout.layout_floating_cruise_custom
                     : R.layout.layout_floating_cruise_normal;
         }
 
@@ -565,6 +690,7 @@ public class FloatingWindowManager {
             activeWindow.onDestroy();
         }
         activeWindow = FloatingWindowFactory.createWindow(currentMode, effectiveStyle, context, inflated);
+        activeWindow.setPhysicalScale(getScale());
 
         restoreCachedData();
         measureNaturalSize();
@@ -611,10 +737,19 @@ public class FloatingWindowManager {
         applyScale();
         setupTouchListener();
         applyThemeColor();
-        windowManager.addView(floatingView, layoutParams);
-        isShowing = true;
-        ensureClusterMirror();
-        updateFloatingWindowVisibility();
+        // 后台/重入时 addView 可能抛 IllegalStateException/BadTokenException，
+        // 而 recreateWindow 常在 BroadcastReceiver.onReceive 或主线程 Handler 回调中执行，
+        // 未捕获异常会直接杀进程。这里加保护 + 防重复添加。
+        try {
+            if (floatingView.getParent() == null) {
+                windowManager.addView(floatingView, layoutParams);
+            }
+            isShowing = true;
+        } catch (Throwable tr) {
+            Log.e(TAG, "addView failed", tr);
+        }
+        try { ensureClusterMirror(); } catch (Throwable tr) { Log.e(TAG, "ensureClusterMirror failed", tr); }
+        try { updateFloatingWindowVisibility(); } catch (Throwable tr) { Log.e(TAG, "updateFloatingWindowVisibility failed", tr); }
     }
 
     private void doNaviSwitch() {
@@ -640,21 +775,11 @@ public class FloatingWindowManager {
     }
 
     private void onNaviTimeout() {
-        if (currentMode == MODE_NAVI) {
-            currentMode = MODE_CRUISE;
-            View view = floatingView;
-            shouldHideAfterRecreate = (view == null || view.getVisibility() == View.VISIBLE) ? false : true;
-            handler.postDelayed(naviSwitchRunnable, 300);
-        }
+        // 方案A：导航会话一旦开始即持续显示，不再因数据空窗而自动降级为巡航模式
     }
 
     private void onCruiseGrace() {
-        if (currentMode == MODE_NAVI) {
-            currentMode = MODE_CRUISE;
-            View view = floatingView;
-            shouldHideAfterRecreate = (view == null || view.getVisibility() == View.VISIBLE) ? false : true;
-            handler.postDelayed(naviSwitchRunnable, 300);
-        }
+        // 方案A：不再因数据空窗把导航模式降级为巡航模式
     }
 
 
@@ -704,6 +829,12 @@ public class FloatingWindowManager {
             if (cachedSapaName != null && !cachedSapaName.isEmpty()) {
                 activeWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
             }
+            if ((cachedIntervalEndDistanceText != null && !cachedIntervalEndDistanceText.isEmpty()) || cachedIntervalAvgSpeed > 0) {
+                activeWindow.updateIntervalSpeed(cachedSpeed, cachedIntervalAvgSpeed, cachedIntervalLimitedSpeed, cachedIntervalEndDistanceText);
+            }
+            if (cachedIntervalStartDistance >= 0) {
+                activeWindow.updateIntervalStartDistance(cachedIntervalStartDistance);
+            }
             if (cachedLightCountdown > 0) {
                 activeWindow.updateTrafficLight(cachedLightStatus, cachedLightDir, cachedLightCountdown);
             }
@@ -742,7 +873,7 @@ public class FloatingWindowManager {
         scaleViewRecursive(root, getScale());
     }
 
-    private void scaleViewRecursive(View view, float factor) {
+    public void scaleViewRecursive(View view, float factor) {
         if (view instanceof TextView) {
             TextView tv = (TextView) view;
             tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, tv.getTextSize() * factor);
@@ -786,6 +917,7 @@ public class FloatingWindowManager {
         if (isShowing) {
             refreshWindow();
         }
+        pushSecondScreenConfig();
     }
 
     /** 更新 TMC 路况数据（KEY_TYPE=13011） */
@@ -957,15 +1089,17 @@ public class FloatingWindowManager {
         boolean hideMainWhenClusterActive = sp.getBoolean("hide_main_when_cluster_active", false);
 
         boolean isClusterActive = isClusterMirrorEnabled && clusterFloatingView != null;
+        // TCP 副屏已连接也视为"副屏显示中"，让"副屏显示时隐藏主屏"对 TCP 副屏同样生效
+        boolean isSubScreenActive = isClusterActive || isTcpSubScreenActive();
         boolean shouldHideMain = (hideOnForeground && isAmapForeground)
-                || (hideMainWhenClusterActive && isClusterActive)
+                || (hideMainWhenClusterActive && isSubScreenActive)
                 || (hideOnCrossMap && cachedCrossMap == 1 && currentMode == MODE_NAVI);
 
         if (floatingView != null) {
             if (shouldHideMain) {
                 floatingView.setVisibility(View.GONE);
             } else {
-                if (currentMode == MODE_NAVI || (isCruiseEnabled() && hasActiveData)) {
+                if (naviSessionActive || (isCruiseEnabled() && cruiseSessionActive)) {
                     floatingView.setVisibility(View.VISIBLE);
                 } else {
                     floatingView.setVisibility(View.GONE);
@@ -1139,10 +1273,15 @@ public class FloatingWindowManager {
             measureNaturalSize();
             int newWidth = naturalWidth;
             int newHeight = naturalHeight;
+            int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+            int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
             if (isAutoCenteringEnabled) {
-                int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
                 layoutParams.x = (screenWidth - newWidth) / 2;
+            } else {
+                // 边界纠正：确保窗口右边框不超出屏幕右侧、不超出左侧
+                layoutParams.x = Math.max(0, Math.min(layoutParams.x, screenWidth - Math.max(newWidth, 1)));
             }
+            layoutParams.y = Math.max(0, Math.min(layoutParams.y, screenHeight - Math.max(newHeight, 1)));
             layoutParams.width = newWidth;
             layoutParams.height = newHeight;
             try {
@@ -1290,6 +1429,36 @@ public class FloatingWindowManager {
         }
         if (clusterActiveWindow != null && clusterFloatingView != null) {
             clusterActiveWindow.updateSapaInfo(cachedSapaName, cachedSapaDist, cachedSapaType, cachedNextSapaName, cachedNextSapaDist, cachedNextSapaType);
+        }
+    }
+
+    /**
+     * 更新区间测速信息（高德 12110 广播）。车速复用导航缓存的 cachedSpeed。
+     */
+    public void updateIntervalSpeed(int avgSpeed, int limitSpeed, String endDistanceText) {
+        cachedIntervalAvgSpeed = avgSpeed;
+        cachedIntervalLimitedSpeed = limitSpeed;
+        cachedIntervalEndDistanceText = endDistanceText != null ? endDistanceText : "";
+        if (!isShowing) return;
+        if (activeWindow != null && floatingView != null) {
+            activeWindow.updateIntervalSpeed(cachedSpeed, cachedIntervalAvgSpeed, cachedIntervalLimitedSpeed, cachedIntervalEndDistanceText);
+        }
+        if (clusterActiveWindow != null && clusterFloatingView != null) {
+            clusterActiveWindow.updateIntervalSpeed(cachedSpeed, cachedIntervalAvgSpeed, cachedIntervalLimitedSpeed, cachedIntervalEndDistanceText);
+        }
+    }
+
+    /**
+     * 更新区间起点距离（高德 12110 广播，INTERVAL_DISTANCE==0.0 帧的 START_DISTANCE）。米，<0 表示隐藏。
+     */
+    public void updateIntervalStartDistance(int meters) {
+        cachedIntervalStartDistance = meters;
+        if (!isShowing) return;
+        if (activeWindow != null && floatingView != null) {
+            activeWindow.updateIntervalStartDistance(cachedIntervalStartDistance);
+        }
+        if (clusterActiveWindow != null && clusterFloatingView != null) {
+            clusterActiveWindow.updateIntervalStartDistance(cachedIntervalStartDistance);
         }
     }
 
@@ -1459,12 +1628,13 @@ public class FloatingWindowManager {
                 clusterScaleTarget = null;
             }
 
-            float scale = getScale();
+            float scale = getClusterScale();
             if (scale != 1.0f) {
                 physicalScaleContent(inflated);
             }
 
             clusterActiveWindow = FloatingWindowFactory.createWindow(currentMode, effectiveStyle, clusterContext, inflated);
+            clusterActiveWindow.setPhysicalScale(getClusterScale());
 
             restoreCachedDataForCluster();
             measureNaturalSizeForCluster(clusterFloatingView);
@@ -1741,37 +1911,51 @@ public class FloatingWindowManager {
         return clusterFloatingView != null;
     }
 
+    /** TCP 副屏是否处于"已开启且已连接"状态（视为副屏正在显示） */
+    private boolean isTcpSubScreenActive() {
+        SharedPreferences sp = context.getSharedPreferences("floating_config", Context.MODE_PRIVATE);
+        if (!sp.getBoolean("tcp_sub_screen_enabled", false)) return false;
+        SecondScreenTransmitter tx = SecondScreenTransmitter.getInstance();
+        return tx != null && tx.isConnected();
+    }
+
     public void updateClusterPosition(int x, int y) {
-        if (clusterContext == null) return;
+        if (clusterContext != null) {
+            // 仪表盘镜像（物理副屏）模式：直接移动本地副屏窗口
+            int screenWidth = getClusterScreenWidth();
+            int screenHeight = getClusterScreenHeight();
+            int viewWidth = clusterNaturalWidth > 0 ? clusterNaturalWidth : dpToPx(160);
+            int viewHeight = clusterNaturalHeight > 0 ? clusterNaturalHeight : dpToPx(120);
 
-        int screenWidth = getClusterScreenWidth();
-        int screenHeight = getClusterScreenHeight();
-        int viewWidth = clusterNaturalWidth;
-        int viewHeight = clusterNaturalHeight;
+            int correctedX = Math.max(0, Math.min(x, screenWidth - viewWidth));
+            int correctedY = Math.max(0, Math.min(y, screenHeight - viewHeight));
 
-        if (viewWidth <= 0) viewWidth = dpToPx(160);
-        if (viewHeight <= 0) viewHeight = dpToPx(120);
+            clusterSavedPosX = correctedX;
+            clusterSavedPosY = correctedY;
 
-        int correctedX = Math.max(0, Math.min(x, screenWidth - viewWidth));
-        int correctedY = Math.max(0, Math.min(y, screenHeight - viewHeight));
+            context.getSharedPreferences("floating_config", Context.MODE_PRIVATE)
+                    .edit()
+                    .putInt("cluster_window_pos_x", correctedX)
+                    .putInt("cluster_window_pos_y", correctedY)
+                    .apply();
 
-        clusterSavedPosX = correctedX;
-        clusterSavedPosY = correctedY;
+            pushSecondScreenConfig();
 
-        context.getSharedPreferences("floating_config", Context.MODE_PRIVATE)
-                .edit()
-                .putInt("cluster_window_pos_x", correctedX)
-                .putInt("cluster_window_pos_y", correctedY)
-                .apply();
-
-        if (clusterLayoutParams != null && clusterFloatingView != null && clusterWindowManager != null) {
-            clusterLayoutParams.x = correctedX;
-            clusterLayoutParams.y = correctedY;
-            try {
-                clusterWindowManager.updateViewLayout(clusterFloatingView, clusterLayoutParams);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to update cluster position layout", e);
+            if (clusterLayoutParams != null && clusterFloatingView != null && clusterWindowManager != null) {
+                clusterLayoutParams.x = correctedX;
+                clusterLayoutParams.y = correctedY;
+                try {
+                    clusterWindowManager.updateViewLayout(clusterFloatingView, clusterLayoutParams);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to update cluster position layout", e);
+                }
             }
+            return;
         }
+
+        // TCP 副屏模式（无物理副屏）：保存 TCP 专用坐标（虚拟 1920x1280 设计画布空间）并下发到接收端
+        int correctedX = Math.max(0, Math.min(x, 1920));
+        int correctedY = Math.max(0, Math.min(y, 1280));
+        setTcpPosition(correctedX, correctedY);
     }
 }

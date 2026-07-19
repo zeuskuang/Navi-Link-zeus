@@ -3,6 +3,7 @@ package com.navi.link;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -22,7 +23,19 @@ public abstract class BaseFloatingWindow {
     protected static final int TEXT_HINT_DARK = 0xFF888888;
 
     protected boolean isNightMode = true;
-    protected boolean isClusterWindow = false;
+
+    // 物理缩放因子：用于 dp→px 坐标换算，以及内部动态视图（红绿灯等）缩放
+    protected float physicalScale = 1.0f;
+
+    /** 设置窗口物理缩放比例（由 FloatingWindowManager 注入当前 scale） */
+    public void setPhysicalScale(float scale) {
+        this.physicalScale = scale;
+    }
+
+    /** 返回窗口当前物理缩放比例（供内部动态视图缩放使用） */
+    protected float getWindowScale() {
+        return physicalScale;
+    }
 
     public BaseFloatingWindow(Context context, View floatingView) {
         this.context = context;
@@ -65,6 +78,12 @@ public abstract class BaseFloatingWindow {
     // 更新最近的两个服务区信息
     public void updateSapaInfo(String sapaName, String sapaDist, int sapaType, String nextSapaName, String nextSapaDist, int nextSapaType) {}
 
+    // 更新区间测速（当前车速 / 平均车速 / 限制速度 / 剩余区间距离文本）
+    public void updateIntervalSpeed(int curSpeed, int avgSpeed, int limitSpeed, String endDistanceText) {}
+
+    // 更新区间起点距离（米，<0 表示隐藏）
+    public void updateIntervalStartDistance(int meters) {}
+
     // ======================== 通用辅助方法 ========================
 
     protected boolean isDarkThemeColor(int color) {
@@ -75,6 +94,23 @@ public abstract class BaseFloatingWindow {
 
     protected int dpToPx(int dp) {
         return (int) (dp * context.getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    /** 将数字 TextView 固定为 N 位宽（按 '8' 测量），数字变化只改文本不改框尺寸，避免悬浮窗抖动 */
+    protected void fixDigitWidth(TextView tv, int digits) {
+        if (tv == null) return;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < digits; i++) sb.append('8');
+        int w = (int) (tv.getPaint().measureText(sb.toString()) + 0.5f) + dpToPx(2);
+        tv.setWidth(w);
+        tv.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+    }
+
+    /** 将文本 TextView 固定为「最宽样本」宽度，文本变化不撑动悬浮窗（预留空间） */
+    protected void fixTextWidth(TextView tv, String widest) {
+        if (tv == null) return;
+        int w = (int) (tv.getPaint().measureText(widest) + 0.5f) + dpToPx(2);
+        tv.setWidth(w);
     }
 
     protected boolean disNumIsNow(String disNum) {
@@ -209,19 +245,5 @@ public abstract class BaseFloatingWindow {
                 scaleViewRecursive(vg.getChildAt(i), factor);
             }
         }
-    }
-
-    public void setClusterWindow(boolean clusterWindow) {
-        this.isClusterWindow = clusterWindow;
-        onScaleChanged();
-    }
-
-    protected void onScaleChanged() {
-    }
-
-    public float getWindowScale() {
-        FloatingWindowManager fwm = FloatingWindowManager.getInstance();
-        if (fwm == null) return 1.0f;
-        return isClusterWindow ? fwm.getClusterScale() : fwm.getScale();
     }
 }

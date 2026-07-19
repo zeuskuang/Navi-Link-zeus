@@ -27,9 +27,15 @@ public class TrafficLightView extends LinearLayout {
     private ObjectAnimator blinkAnimator;
     private SharedPreferences sp;
     private float scaleFactor = -1f;
+    private boolean embedded = false;   // 被嵌入复合胶囊时不绘制自身背景
 
     public void setScaleFactor(float factor) {
         this.scaleFactor = factor;
+    }
+
+    /** 设置为嵌入模式：被外层胶囊包裹时不绘制自身背景，避免双重胶囊 */
+    public void setEmbedded(boolean embedded) {
+        this.embedded = embedded;
     }
 
     private float getScale() {
@@ -199,6 +205,13 @@ public class TrafficLightView extends LinearLayout {
     // ======================== 填充背景样式 ========================
 
     private void applyFillStyle(int status, boolean isNavi) {
+        // 嵌入模式：自身不绘制背景，由外层胶囊统一提供外观
+        if (embedded) {
+            setBackground(null);
+            boolean iconEnabled = sp.getBoolean("traffic_light_icon_enabled", true);
+            ivLightIcon.setVisibility(iconEnabled ? View.VISIBLE : View.GONE);
+            return;
+        }
         boolean fillEnabled = sp.getBoolean("traffic_light_fill_enabled", false);
 
         if (fillEnabled) {

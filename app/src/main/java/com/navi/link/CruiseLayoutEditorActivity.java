@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
@@ -59,6 +61,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             {"lightcount",   "红绿灯个数","custom_navi_lightcount"},
             {"trafficlight", "红绿灯",   "custom_navi_trafficlight"},
             {"camera",       "摄像头",   "custom_navi_camera"},
+            {"lightcam",     "红绿灯电子眼", "custom_navi_lightcam"},
             {"lane",         "车道线",   "custom_navi_lane"},
             {"tmc",          "路况条",   "custom_navi_tmc"},
     };
@@ -77,6 +80,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
     private final Map<String, Boolean> editEnabled = new HashMap<>();
     private final Map<String, Float> editSizes = new HashMap<>();
     private float density;
+    private float globalScale = 1.0f;
 
     // 上次点击时间，用于双击检测
     private final java.util.Map<String, Long> lastClickTime = new HashMap<>();
@@ -87,7 +91,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         ICON_MAP.put("roadname", "\uD83D\uDEE3\uFE0F"); ICON_MAP.put("lightcount", "\uD83D\uDEA6");
         ICON_MAP.put("trafficlight", "\uD83D\uDD34"); ICON_MAP.put("camera", "\uD83D\uDCF7");
         ICON_MAP.put("lane", "\uD83D\uDEDE"); ICON_MAP.put("turninfo", "\u21AA\uFE0F");
-        ICON_MAP.put("tmc", "\uD83D\uDFE2");
+        ICON_MAP.put("tmc", "\uD83D\uDFE2"); ICON_MAP.put("lightcam", "\uD83D\uDCF7");
     }
 
     @Override
@@ -138,6 +142,12 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
 
         // 确保FloatingWindowManager已初始化，供LaneLineView等组件获取缩放值
         FloatingWindowManager.getInstance(this);
+        globalScale = FloatingWindowManager.getInstance().getScale();
+
+        // 应用全局缩放到预览视图（文字大小、padding、边距等）
+        if (globalScale != 1.0f) {
+            FloatingWindowManager.getInstance().scaleViewRecursive(cruiseView, globalScale);
+        }
 
         // 预填充所有要素的默认值（确保即使view为null也有数据）
         for (String[] elem : ELEMENTS) {
@@ -165,6 +175,18 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             view.setVisibility(enabled ? View.VISIBLE : View.GONE);
             applyLocalScale(view, size);
             setupDragListener(view, key);
+            // 仪表盘与速度组共享同一位置和拖动
+            if (key.equals("speed")) {
+                int gaugeId = isNavi
+                    ? R.id.navi_speed_gauge
+                    : getResources().getIdentifier("cruise_speed_gauge", "id", getPackageName());
+                View gauge = cruiseView.findViewById(gaugeId);
+                if (gauge != null) {
+                    applyElementPosition(gauge, xDp, yDp);
+                    applyLocalScale(gauge, size);
+                    setupDragListener(gauge, key);
+                }
+            }
         }
 
         adjustPreviewRoot();
@@ -177,6 +199,10 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             View v = findElementView(k);
             if (v != null) v.setVisibility(editEnabled.get(k) ? View.VISIBLE : View.GONE);
         }
+
+        // 应用保存的速度显示模式（数字/仪表）
+        String savedStyle = sp.getString("speed_style", "digital");
+        updateSpeedPreview(savedStyle);
 
         previewWindow.addView(cruiseView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT));
@@ -235,6 +261,12 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             // 摄像头示例
             CameraWarningView camNavi = v.findViewById(R.id.custom_navi_camera);
             if (camNavi != null) camNavi.updateCameraInfo(1, 300, 60);
+            // 红绿灯+电子眼 复合胶囊示例
+            TrafficLightCamView lcNavi = v.findViewById(R.id.custom_navi_lightcam);
+            if (lcNavi != null) {
+                lcNavi.updateTrafficLight(1, 2, 15, true);
+                lcNavi.updateRedLightCamera(12, 200, 60);
+            }
             // TMC路况条示例
             TmcProgressBar tmcNavi = v.findViewById(R.id.custom_navi_tmc);
             if (tmcNavi != null) {
@@ -263,6 +295,11 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             // 摄像头示例
             CameraWarningView camCruise = v.findViewById(R.id.custom_camera);
             if (camCruise != null) camCruise.updateCameraInfo(1, 300, 60);
+            // 仪表盘示例（速度默认 60）
+            SpeedometerView cruiseGauge = v.findViewById(R.id.cruise_speed_gauge);
+            if (cruiseGauge != null) {
+                cruiseGauge.setSpeed(60);
+            }
         }
     }
 
@@ -273,8 +310,8 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
 
     private void applyElementPosition(View view, float xDp, float yDp) {
         if (view == null) return;
-        int xPx = Math.round(xDp * density);
-        int yPx = Math.round(yDp * density);
+        int xPx = Math.round(xDp * density * globalScale);
+        int yPx = Math.round(yDp * density * globalScale);
         ViewGroup.LayoutParams lp = view.getLayoutParams();
         if (lp instanceof FrameLayout.LayoutParams) {
             ((FrameLayout.LayoutParams) lp).leftMargin = xPx;
@@ -307,7 +344,6 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     v.setAlpha(1f); v.setTag(null);
-                    // 双击检测
                     if (event.getAction() == MotionEvent.ACTION_UP) {
                         long now = System.currentTimeMillis();
                         Long last = lastClickTime.get(key);
@@ -395,9 +431,36 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             final View fv = findElementView(key);
             sw.setOnCheckedChangeListener((b, isChecked) -> {
                 editEnabled.put(fk, isChecked);
-                if (fv != null) fv.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                if ("speed".equals(fk)) {
+                    // 速度总开关变化需同步隐藏/显示仪表盘
+                    String style = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString("speed_style", "digital");
+                    updateSpeedPreview(style);
+                } else if (fv != null) {
+                    fv.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                    adjustPreviewRoot();
+                }
             });
-            chip.setOnClickListener(v -> sw.toggle());
+            chip.setOnClickListener(v -> {
+                if ("speed".equals(fk)) {
+                    // 双击速度开关切换数字/仪表模式
+                    long now = System.currentTimeMillis();
+                    Long last = lastClickTime.get(fk);
+                    if (last != null && now - last < 400) {
+                        SharedPreferences sp2 = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                        String cur = sp2.getString("speed_style", "digital");
+                        String next = "digital".equals(cur) ? "analog" : "digital";
+                        sp2.edit().putString("speed_style", next).commit();
+                        FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                        if (fwm != null && fwm.isShowing()) fwm.refreshWindow();
+                        updateSpeedPreview(next);
+                        lastClickTime.put(fk, 0L);
+                    } else {
+                        lastClickTime.put(fk, now);
+                    }
+                } else {
+                    sw.toggle();
+                }
+            });
             toggleContainer.addView(chip);
         }
     }
@@ -453,6 +516,12 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 View v = findElementView(key);
                 if (v != null) {
                     applyLocalScale(v, s);
+                    // 速度缩放同步到仪表盘
+                    if ("speed".equals(key) && rootLayout != null) {
+                        SpeedometerView gauge = rootLayout.findViewById(
+                                getResources().getIdentifier("navi_speed_gauge", "id", getPackageName()));
+                        if (gauge != null) applyLocalScale(gauge, s);
+                    }
                     adjustPreviewRoot();
                 }
             }
@@ -466,6 +535,80 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
         popup.showAtLocation(anchor, Gravity.NO_GRAVITY,
                 loc[0] + anchor.getWidth() / 2 - dpToPx(100),
                 loc[1] + anchor.getHeight() + dpToPx(4));
+    }
+
+    /** 长按速度要素弹出样式选择 */
+    private void showStylePopup(View anchor) {
+        final SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        final String current = sp.getString("speed_style", "digital");
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setBackgroundColor(0xFF1E1E1E);
+        int p = dpToPx(16);
+        content.setPadding(p, dpToPx(12), p, dpToPx(12));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0xFF1E1E1E); bg.setCornerRadius(dpToPx(12));
+        bg.setStroke(dpToPx(1), 0xFF444444);
+        content.setBackground(bg);
+
+        TextView title = new TextView(this);
+        title.setText("速度显示样式");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(14);
+        content.addView(title);
+
+        String[][] styles = {{"digital", "数字速度"}, {"analog", "仪表速度"}};
+
+        final PopupWindow popup = new PopupWindow(content, dpToPx(180), dpToPx(140), true);
+        popup.setOutsideTouchable(true);
+
+        for (final String[] st : styles) {
+            TextView item = new TextView(this);
+            String prefix = current.equals(st[0]) ? "● " : "○ ";
+            item.setText(prefix + st[1]);
+            item.setTextColor(current.equals(st[0]) ? 0xFF4FC3F7 : 0xFFAAAAAA);
+            item.setTextSize(16);
+            item.setPadding(0, dpToPx(8), 0, dpToPx(8));
+            item.setOnClickListener(v -> {
+                sp.edit().putString("speed_style", st[0]).commit();
+                FloatingWindowManager fwm = FloatingWindowManager.getInstance();
+                if (fwm != null && fwm.isShowing()) fwm.refreshWindow();
+                updateSpeedPreview(st[0]);
+                popup.dismiss();
+            });
+            content.addView(item);
+        }
+
+        int[] loc = new int[2];
+        anchor.getLocationOnScreen(loc);
+        popup.showAtLocation(anchor, Gravity.NO_GRAVITY,
+                loc[0] + anchor.getWidth() / 2 - dpToPx(90),
+                loc[1] + anchor.getHeight() + dpToPx(4));
+    }
+
+    private void updateSpeedPreview(String style) {
+        View sv = findElementView("speed");
+        if (sv == null) return;
+        boolean speedOn = editEnabled.get("speed");   // 速度总开关
+        boolean isDigital = "digital".equals(style);
+        // 速度关闭时，数字组与仪表盘都隐藏；开启时按样式二选一显示
+        sv.setVisibility((speedOn && isDigital) ? View.VISIBLE : View.GONE);
+        // 仪表盘在 rootLayout 中，与 speed_group 同级
+        int gaugeId = editMode == EDIT_MODE_NAVI
+            ? R.id.navi_speed_gauge
+            : getResources().getIdentifier("cruise_speed_gauge", "id", getPackageName());
+        SpeedometerView gauge = rootLayout.findViewById(gaugeId);
+        if (gauge != null) gauge.setVisibility((speedOn && !isDigital) ? View.VISIBLE : View.GONE);
+        adjustPreviewRoot();
+    }
+
+    private void updateSpeedToggleButton(MaterialButton btn) {
+        String style = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString("speed_style", "digital");
+        boolean isDigital = "digital".equals(style);
+        btn.setText(isDigital ? "仪表" : "数字");
+        btn.setTextColor(isDigital ? 0xFF888888 : 0xFF4FC3F7);
+        btn.setStrokeColor(ColorStateList.valueOf(isDigital ? 0xFF444444 : 0xFF4FC3F7));
     }
 
     private View findElementView(String key) {
@@ -502,7 +645,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
             int h = Math.max(c.getMeasuredHeight(), c.getMinimumHeight());
             if (w <= 0) w = dpToPx(50);
             if (h <= 0) h = dpToPx(30);
-            float s = Math.max(c.getScaleX(), 1.0f);
+            float s = Math.abs(c.getScaleX());
             int r = mlp.leftMargin + (int)(w * s);
             int b = mlp.topMargin + (int)(h * s);
             if (r > maxR) maxR = r;
@@ -536,6 +679,9 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 ((SwitchCompat) ((LinearLayout) chip).getChildAt(2)).setChecked(true);
             }
         }
+        // 重置后按当前样式恢复速度显示（数字/仪表），确保仪表盘同步
+        String curStyle = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString("speed_style", "digital");
+        updateSpeedPreview(curStyle);
         Toast.makeText(this, "已重置为默认布局", Toast.LENGTH_SHORT).show();
     }
 
@@ -566,6 +712,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 case "turninfo": return 100; case "roadname": return 100;
                 case "lightcount": return 280; case "trafficlight": return 280;
                 case "lane": return 200; case "camera": return 320;
+                case "lightcam": return 280;
                 default: return 0;
             }
         } else {
@@ -586,6 +733,7 @@ public class CruiseLayoutEditorActivity extends AppCompatActivity {
                 case "turninfo": return 8; case "roadname": return 55;
                 case "lightcount": return 8; case "trafficlight": return 40;
                 case "lane": return 6; case "camera": return 6;
+                case "lightcam": return 95;
                 default: return 0;
             }
         } else {

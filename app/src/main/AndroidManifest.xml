@@ -95,11 +95,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- 安装会话结果回调接收器（PackageInstaller） -->
-        <receiver
-            android:name=".InstallResultReceiver"
-            android:exported="false" />
-
     </application>
 
 </manifest>
